@@ -1,0 +1,34 @@
+from django.db import models
+import uuid 
+from core.models import Property 
+# Create your models here.
+class Maintenance(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    property = models.ForeignKey(Property, on_delete=models.CASCADE)
+    score = models.FloatField()
+    details = models.TextField()
+    completion_date = models.DateField()
+    status = models.CharField(max_length=50)
+    report_photos = models.TextField()
+    performed_by = models.CharField(max_length=255)
+    history = models.TextField()
+
+    def __str__(self):
+
+        return f'Maintenance - {self.property} - {self.status}'
+    
+class Repair(models.Model):
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    property = models.ForeignKey(Property, on_delete=models.CASCADE)
+    repair_score = models.FloatField()
+    repair_history = models.TextField()
+    completion_date = models.DateField()
+    status = models.CharField(max_length=50)
+    description = models.TextField()
+    completion_report = models.TextField()
+    cost = models.FloatField()
+    reported_by = models.CharField(max_length=255)
+
+    def __str__(self):
+        return f'Repair - {self.property} - {self.status}'
