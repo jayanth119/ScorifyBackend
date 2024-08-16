@@ -88,7 +88,6 @@ class EPCScoreLast12MonthsView(View):
 
 
 
-
 class EPCGradeCountView(View):
     def get(self, request, agent_id):
         # Get all properties related to the agent through the landlords they manage
