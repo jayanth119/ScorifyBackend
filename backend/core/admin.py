@@ -8,22 +8,43 @@ from .models import (
 class LandlordAdmin(admin.ModelAdmin):
     list_display = ('name', 'phone', 'email')
     search_fields = ('name', 'phone', 'email')
-    filter_horizontal = ('properties',)  # Only include many-to-many fields
-    readonly_fields = ('id',)
+    filter_horizontal = ('properties',)
+    readonly_fields = ('user',)
 
 @admin.register(Tenant)
 class TenantAdmin(admin.ModelAdmin):
     list_display = ('name', 'phone', 'email', 'landlord')
     search_fields = ('name', 'phone', 'email', 'landlord__name')
-    filter_horizontal = ('properties',)  # Only include many-to-many fields
-    readonly_fields = ('id',)
+    filter_horizontal = ('properties',)
+    readonly_fields = ('user',)
 
 @admin.register(Agent)
 class AgentAdmin(admin.ModelAdmin):
     list_display = ('name', 'phone', 'email', 'location', 'website')
     search_fields = ('name', 'phone', 'email', 'location')
-    filter_horizontal = ('landlords', 'tenants')  # These should be many-to-many fields
-    readonly_fields = ('id',)
+    filter_horizontal = ('landlords', 'tenants')
+    readonly_fields = ('user',)
+
+# @admin.register(Landlord)
+# class LandlordAdmin(admin.ModelAdmin):
+#     list_display = ('name', 'phone', 'email')
+#     search_fields = ('name', 'phone', 'email')
+#     filter_horizontal = ('properties',)  # Only include many-to-many fields
+#     readonly_fields = ('id',)
+
+# @admin.register(Tenant)
+# class TenantAdmin(admin.ModelAdmin):
+#     list_display = ('name', 'phone', 'email', 'landlord')
+#     search_fields = ('name', 'phone', 'email', 'landlord__name')
+#     filter_horizontal = ('properties',)  # Only include many-to-many fields
+#     readonly_fields = ('id',)
+
+# @admin.register(Agent)
+# class AgentAdmin(admin.ModelAdmin):
+#     list_display = ('name', 'phone', 'email', 'location', 'website')
+#     search_fields = ('name', 'phone', 'email', 'location')
+#     filter_horizontal = ('landlords', 'tenants')  # These should be many-to-many fields
+#     readonly_fields = ('id',)
 
 @admin.register(Property)
 class PropertyAdmin(admin.ModelAdmin):

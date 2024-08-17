@@ -14,5 +14,5 @@ urlpatterns = [
     path('agents/', AgentListView.as_view(), name='agent-list'),
     path('agents/<uuid:id>/', AgentDetailView.as_view(), name='agent-detail'),
      path('properties/', PropertyListView.as_view(), name='property-list'),
-    path('properties/<uuid:id>/', PropertyDetailView.as_view(), name='property-detail'),
+    path('c/<uuid:id>/', PropertyDetailView.as_view(), name='property-detail'),
 ]

@@ -11,5 +11,5 @@ class RepairAdmin(admin.ModelAdmin):
 
 
 
-admin.site.register(Maintenance , MaintenanceAdmin)
+admin.site.register( Maintenance , MaintenanceAdmin)
 admin.site.register(Repair, RepairAdmin)

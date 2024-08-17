@@ -1,8 +1,8 @@
-from django.db import models
+import os
 import uuid
 from django.db import models
 from django.contrib.auth import get_user_model
-import os 
+
 User = get_user_model()
 
 def profile_photo_upload_path(instance, filename):
@@ -23,9 +23,9 @@ def profile_photo_upload_path(instance, filename):
     # Full upload path
     return os.path.join('profilephotos', folder, filename)
 
+
 class Landlord(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, primary_key=True, related_name='landlord_profile')
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=255)
     phone = models.CharField(max_length=15)
     email = models.EmailField()
@@ -35,17 +35,37 @@ class Landlord(models.Model):
     def __str__(self):
         return self.name
 
+
 class Tenant(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.OneToOneField(User, on_delete=models.CASCADE, primary_key=True, related_name='tenant_profile')
     name = models.CharField(max_length=255)
     phone = models.CharField(max_length=15)
     email = models.EmailField()
     current_tenancy_score = models.FloatField()
-    landlord = models.ForeignKey(Landlord, related_name='tenants', on_delete=models.CASCADE)
+    landlord = models.ForeignKey('Landlord', related_name='tenants', on_delete=models.CASCADE)  # Fix here
     properties = models.ManyToManyField('Property', related_name='tenants', blank=True)
+    otp = models.CharField(max_length=6, blank=True, null=True)
+    is_verified = models.BooleanField(default=False)
+    profile_photo = models.ImageField(upload_to=profile_photo_upload_path, null=True, blank=True)
 
     def __str__(self):
         return self.name
+
+
+class Agent(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, primary_key=True, related_name='agent_profile')
+    name = models.CharField(max_length=255)
+    phone = models.CharField(max_length=15)
+    email = models.EmailField()
+    location = models.CharField(max_length=255)
+    website = models.URLField()
+    landlords = models.ManyToManyField(Landlord, related_name='agents', blank=True)
+    tenants = models.ManyToManyField(Tenant, related_name='agents', blank=True)
+    profile_photo = models.ImageField(upload_to=profile_photo_upload_path, null=True, blank=True)
+
+    def __str__(self):
+        return self.name
+
 
 class Property(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -75,21 +95,6 @@ class Property(models.Model):
     def __str__(self):
         return self.address
 
-class Agent(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE, primary_key=True, related_name='agent_profile')
-    name = models.CharField(max_length=255)
-    phone = models.CharField(max_length=15)
-    email = models.EmailField()
-    location = models.CharField(max_length=255)
-    website = models.URLField()
-    landlords = models.ManyToManyField(Landlord, related_name='agents', blank=True)
-    tenants = models.ManyToManyField(Tenant, related_name='agents', blank=True)
-    profile_photo = models.ImageField(upload_to=profile_photo_upload_path, null=True, blank=True)
-
-
-    def __str__(self):
-        return self.name
-
 
 class Management(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -111,6 +116,7 @@ class LettingManagement(models.Model):
     def __str__(self):
         return f'Letting Management - {self.agent} - {self.tenant_property.address}'
 
+
 class SalesManagement(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     agent = models.ForeignKey(Agent, on_delete=models.CASCADE)
@@ -119,11 +125,6 @@ class SalesManagement(models.Model):
 
     def __str__(self):
         return f'Sales Management - {self.agent} - {self.landlord_property.address}'
-
-
-
-
-
 
 
 class PropertyTimeline(models.Model):
