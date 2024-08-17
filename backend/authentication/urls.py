@@ -2,9 +2,12 @@ from django.urls import path
 from rest_framework_simplejwt.views import (
     TokenObtainPairView,
     TokenRefreshView,
+    
 )
 from django.conf import settings
-from .views import RegisterView,LoginView,ForgotPasswordView,ChangePasswordView,TenantProfileSetupView, AgentProfileSetupView, LandlordProfileSetupView
+from .views import (RegisterView,LoginView,ForgotPasswordView,ChangePasswordView,TenantProfileSetupView, AgentProfileSetupView, LandlordProfileSetupView , 
+                    SendOTPView ,VerifyOTPView
+                    )
 from django.conf.urls.static import static
 urlpatterns=[
    path('token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
@@ -13,10 +16,11 @@ urlpatterns=[
    path("login/",LoginView.as_view(),name="login"),
    path("forgot-password/",ForgotPasswordView.as_view(),name="forgot_password"),
    path("change-password/<uuid:id>/",ChangePasswordView.as_view(),name="forgot_password"),
-
-path('tenant/profile-setup/', TenantProfileSetupView.as_view(), name='tenant-profile-setup'),
+    path('tenant/profile-setup/', TenantProfileSetupView.as_view(), name='tenant-profile-setup'),
     path('agent/profile-setup/', AgentProfileSetupView.as_view(), name='agent-profile-setup'),
     path('landlord/profile-setup/', LandlordProfileSetupView.as_view(), name='landlord-profile-setup'),
+    path('sendotp' , SendOTPView.as_view() , name="send-otp"),
+    path('verifyotp' ,  VerifyOTPView.as_view() , name='verify-otp'), 
 ]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)  
 
 
