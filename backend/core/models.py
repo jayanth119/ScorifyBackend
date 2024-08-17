@@ -1,12 +1,36 @@
 from django.db import models
 import uuid
+from django.db import models
+from django.contrib.auth import get_user_model
+import os 
+User = get_user_model()
+
+def profile_photo_upload_path(instance, filename):
+    # Extracting the file extension
+    ext = filename.split('.')[-1]
+    
+    # Creating the folder structure based on user type
+    if instance.user.user_type == 'tenant':
+        folder = 'tenant'
+    elif instance.user.user_type == 'agent':
+        folder = 'agent'
+    elif instance.user.user_type == 'landlord':
+        folder = 'landlord'
+    
+    # Constructing the filename as the user's UUID
+    filename = f"{instance.user.id}.{ext}"
+    
+    # Full upload path
+    return os.path.join('profilephotos', folder, filename)
 
 class Landlord(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, primary_key=True, related_name='landlord_profile')
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=255)
     phone = models.CharField(max_length=15)
     email = models.EmailField()
     properties = models.ManyToManyField('Property', related_name='landlords', blank=True)
+    profile_photo = models.ImageField(upload_to=profile_photo_upload_path, null=True, blank=True)
 
     def __str__(self):
         return self.name
@@ -52,7 +76,7 @@ class Property(models.Model):
         return self.address
 
 class Agent(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.OneToOneField(User, on_delete=models.CASCADE, primary_key=True, related_name='agent_profile')
     name = models.CharField(max_length=255)
     phone = models.CharField(max_length=15)
     email = models.EmailField()
@@ -60,6 +84,8 @@ class Agent(models.Model):
     website = models.URLField()
     landlords = models.ManyToManyField(Landlord, related_name='agents', blank=True)
     tenants = models.ManyToManyField(Tenant, related_name='agents', blank=True)
+    profile_photo = models.ImageField(upload_to=profile_photo_upload_path, null=True, blank=True)
+
 
     def __str__(self):
         return self.name
