@@ -10,9 +10,9 @@ def create_user_profile(sender, instance, created, **kwargs):
             Landlord.objects.create(user=instance, name=instance.email)
         elif instance.user_type == 'agent':
             Agent.objects.create(user=instance, name=instance.email)
-        elif instance.user_type == 'tenant':
-            Tenant.objects.create(user=instance, name=instance.email)
 
+        elif instance.user_type == 'tenant':
+            Tenant.objects.create(user=instance, name=instance.email, landlord=None)
 @receiver(post_save, sender=CustomUser)
 def save_user_profile(sender, instance, **kwargs):
     if instance.user_type == 'landlord':
@@ -21,3 +21,6 @@ def save_user_profile(sender, instance, **kwargs):
         instance.agent_profile.save()
     elif instance.user_type == 'tenant':
         instance.tenant_profile.save()
+
+
+

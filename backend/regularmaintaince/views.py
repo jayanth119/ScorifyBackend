@@ -1,7 +1,7 @@
 from django.shortcuts import render
-from .serializers import MaintenanceServiceSerializer,MaintenanceScheduleSerailizer,MaintenanceUpcomingSerializer
+from .serializers import MaintenanceServiceSerializer,MaintenanceScheduleSerailizer,MaintenanceUpcomingSerializer,AgentRepairSerializer
 from rest_framework.views import APIView
-from .models import Maintenance
+from .models import Maintenance,Repair
 from rest_framework.response import Response
 from rest_framework import status
 class PerformedByMixin(APIView):
@@ -36,4 +36,9 @@ class LandlordUpcomingList(APIView):
        maintenance = Maintenance.objects.filter(performed_by='landlord')
        serializer = MaintenanceUpcomingSerializer(maintenance,many=True)
        return Response(serializer.data,status=status.HTTP_200_OK)
-0
+    
+class AgentOpenRepairView(APIView):
+    def get(self,request):
+        repair = Repair.objects.filter(reported_by='agent')
+        serializer = AgentRepairSerializer(repair,many=True)
+        return Response(serializer.data,status=status.HTTP_200_OK)

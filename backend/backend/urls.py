@@ -24,4 +24,4 @@ urlpatterns = [
     path('' , include("gasandheat.urls")),
     path('accounts/',include('authentication.urls')), 
     path('',include('regularmaintaince.urls'))
-]
+ ]

@@ -41,10 +41,11 @@ class Tenant(models.Model):
     name = models.CharField(max_length=255)
     phone = models.CharField(max_length=15)
     email = models.EmailField()
-    current_tenancy_score = models.FloatField()
-    landlord = models.ForeignKey('Landlord', related_name='tenants', on_delete=models.CASCADE)  # Fix here
+    landlord = models.ForeignKey('Landlord', related_name='tenants', on_delete=models.CASCADE, null=True, blank=True)  # Allow null
     properties = models.ManyToManyField('Property', related_name='tenants', blank=True)
     otp = models.CharField(max_length=6, blank=True, null=True)
+    occupation = models.CharField(max_length=255, null=True, blank=True)  # Add this line
+
     is_verified = models.BooleanField(default=False)
     profile_photo = models.ImageField(upload_to=profile_photo_upload_path, null=True, blank=True)
 
