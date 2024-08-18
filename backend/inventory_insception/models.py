@@ -30,8 +30,18 @@ class Condition(models.Model):
     room = models.ForeignKey(Room, related_name='conditions', on_delete=models.CASCADE)
     item = models.CharField(max_length=100)
     condition = models.CharField(max_length=10, choices=[('good', 'Good'), ('fair', 'Fair'), ('repair', 'Repair')])
+    cleanliness= models.CharField(max_length=10,choices=[('good','Good'),('fair','Fair'),('poor','Poor')],default='good')
     photo = models.ImageField(upload_to='room_conditions/', blank=True, null=True)
     document = models.FileField(upload_to='condition_documents/', blank=True, null=True)
 
     def __str__(self):
         return f'{self.item} - {self.room} - {self.condition}'
+
+class Defect(models.Model):
+    room=models.ForeignKey(Room,related_name='defects',on_delete=models.CASCADE)
+    description=models.TextField()
+    def __str__(self):
+        return f'{self.description[:40]}...-{self.room}'
+
+
+
