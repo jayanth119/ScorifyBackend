@@ -2,49 +2,14 @@
 from rest_framework.views import APIView
 from rest_framework import status
 from rest_framework.response import Response
-from . models import Room,Inspection
-from . serializers import RoomSerializer,InspectionSerializer
+from . models import Room,Inventory
+from . serializers import RoomSerializer,InventorySerializer
 
-# from ..core.models import Inspection
-# from .InventorySeriliazer import InspectionSerializer
-
-
-# @api_view(['GET', 'POST'])
-# def inspection_list(request):
-#     if request.method == 'GET':
-#         inspections = Inspection.objects.all()
-#         serializer = InspectionSerializer(inspections, many=True)
-#         return Response(serializer.data, status=status.HTTP_200_OK)
-
-#     elif request.method == 'POST':
-#         serializer = InspectionSerializer(data=request.data)
-#         if serializer.is_valid():
-#             serializer.save()
-#             return Response(serializer.data, status=status.HTTP_201_CREATED)
-#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-# @api_view(['GET', 'PUT'])
-# def inspection_detail(request, inspection_id):
-#     try:
-#         inspection = Inspection.objects.get(id=inspection_id)
-#     except Inspection.DoesNotExist:
-#         return Response({"error": "Inspection not found"}, status=status.HTTP_404_NOT_FOUND)
-
-#     if request.method == 'GET':
-#         serializer = InspectionSerializer(inspection)
-#         return Response(serializer.data, status=status.HTTP_200_OK)
-
-#     elif request.method == 'PUT':
-#         serializer = InspectionSerializer(inspection, data=request.data, partial=True)
-#         if serializer.is_valid():
-#             serializer.save()
-#             return Response(serializer.data, status=status.HTTP_200_OK)
-#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class RoomList(APIView):
     def get(self,request):
         room=Room.objects.all()
-        serializer=RoomSerializer(rooms,many=True)
+        serializer=RoomSerializer(room,many=True)
         return Response(serializer.data,status=status.HTTP_200_OK)
 
 class RoomDetails(APIView):
@@ -53,27 +18,43 @@ class RoomDetails(APIView):
             room=Room.objects.get(id=room_id)
         except Room.DoesNotExist:
             return Response({"error": "Room not found"}, status=status.HTTP_404_NOT_FOUND)
-        serializer=RoomSerializer(room)
-
+        serializer=RoomSerializer(room,many=True)
         return Response(serializer.data,status=status.HTTP_200_OK)
 
-class InspectionList(APIView):        
+class InventoryList(APIView):        
     def get(self,request):
-        inspections=Inspection.objects.all()
-        serializer=InspectionSerializer(inspections,many=True)
+        inventory=Inventory.objects.all()
+        serializer=InventorySerializer(inventory,many=True)
         return Response(serializer.data,status=status.HTTP_200_OK)
     
 
-class InspectionDetails(APIView):
-    def get(self,request,inspection_id):
+class InventoryDetails(APIView):
+    def get(self,request,inventory_id):
         try:
-            inspection=Inspection.objects.get(id=inspection_id)
+            inventory=Inventory.objects.get(id=inventory_id)
 
-        except Inspection.DoesNotExist:
+        except Inventory.DoesNotExist:
 
             return Response({"error": "Room not found"}, status=status.HTTP_404_NOT_FOUND)
-        serializer=InspectionSerializer(inspection)
-
+        serializer=InventorySerializer(inventory)
         return Response(serializer.data,status=status.HTTP_200_OK)
+    
+class InventoryRooms(APIView):
+    def get(self,request,inventory_id):
+        inventory=Inventory.objects.get(id=inventory_id)
+        rooms=Room.objects.filter(inventory=inventory)
+        serializer=RoomSerializer(rooms,many=True)
+        return Response(serializer.data,status=status.HTTP_200_OK)
+
+class InventoryRoomDetails(APIView):
+    def get(self,request,inventory_id,room_id):
+        inventory=Inventory.objects.get(id=inventory_id)
+        room=Room.objects.get(inventory=inventory)
+        serializer=RoomSerializer(room)
+        return Response(serializer.data,status=status.HTTP_200_OK)
+
+        
+    
+
         
 

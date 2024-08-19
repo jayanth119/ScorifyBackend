@@ -1,8 +1,8 @@
 from django.contrib import admin
-from .models import Room, Condition, Inspection, Defect
+from .models import Room, Condition, Inventory, Defect
 
-class InspectionAdmin(admin.ModelAdmin):
-    list_display = ('id', 'property', 'score', 'date', 'type', 'title', 'created_by', 'expiry_date', 'past_inspection')
+class InventoryAdmin(admin.ModelAdmin):
+    list_display = ('id', 'property', 'score', 'date', 'type', 'title', 'created_by', 'expiry_date', 'past_inventory')
     readonly_fields = ('id',)
 
 class RoomAdmin(admin.ModelAdmin):
@@ -19,7 +19,7 @@ class DefectAdmin(admin.ModelAdmin):
     list_display = ('id', 'room', 'description')
     search_fields = ('room__name', 'description')
 
-admin.site.register(Inspection, InspectionAdmin)
+admin.site.register(Inventory, InventoryAdmin)
 admin.site.register(Room, RoomAdmin)
 admin.site.register(Condition, ConditionAdmin)
 admin.site.register(Defect, DefectAdmin)

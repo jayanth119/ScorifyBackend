@@ -1,27 +1,30 @@
-from rest_framework import serializers
-from . model import Room,Condition,Defect,Inspection
+from rest_framework.serializers import ModelSerializer
+from . models import Room,Condition,Defect,Inventory
 
-class ConditionSerializer(serializer.ModalSerializer):
+
+class ConditionSerializer(ModelSerializer):
     class Meta:
         model=Condition
-        fields=['id','item','condition','cleanliness','photo','document']
+        fields=['id','item','condition','cleanliness','photo']
 
-class DefectSerializer(serializer.ModalSerializer):
+class DefectSerializer(ModelSerializer):
     class Meta:
         model=Defect
         fields=['id','description']
 
-class RoomSerializer(serializer.ModalSerializer):
+class RoomSerializer(ModelSerializer):                                                                                          
     conditions=ConditionSerializer(many=True,read_only=True)
     defects=DefectSerializer(many=True,read_only=True)
     class Meta:
         model=Room
-        field=['id','name','completion_percentage','conditions','defects']
+        fields=['id','name','completion_percentage','conditions','defects']
 
-class InspectionSerializer(serializer.ModalSerializer):
+class InventorySerializer(ModelSerializer):
     rooms=RoomSerializer(many=True,read_only=True)
     
     class Meta:
-        model=Inspection
-        field=['id','property','document','score','date','type','title','created_by','expiry_date','past_inspection','rooms']
+        model=Inventory
+        fields=['id','property','document','score','date','type','title','created_by','expiry_date','past_inventory','rooms']
+
+
 
