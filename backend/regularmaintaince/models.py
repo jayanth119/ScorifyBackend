@@ -1,10 +1,13 @@
 from django.db import models
 import uuid 
 from core.models import Property 
-# Create your models here.
+from django.contrib.auth import get_user_model
+
+customuser = get_user_model()
 class Maintenance(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     # property = models.ForeignKey(Property, on_delete=models.CASCADE)
+    user = models.ForeignKey(customuser,on_delete=models.CASCADE,related_name='maintenance')
     score = models.FloatField()
     details = models.TextField()
     completion_date = models.DateField()
@@ -25,7 +28,8 @@ class Maintenance(models.Model):
     
 class Repair(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    property = models.ForeignKey(Property, on_delete=models.CASCADE)
+    user = models.ForeignKey(customuser,on_delete=models.CASCADE,related_name='repair')
+    property = models.ForeignKey(Property, on_delete=models.CASCADE,related_name='repair')
     repair_score = models.FloatField()
     repair_history = models.TextField()
     completion_date = models.DateField()
@@ -36,4 +40,4 @@ class Repair(models.Model):
     reported_by = models.CharField(max_length=255)
 
     def __str__(self):
-        return f'Repair - {self.property} - {self.status}'
+        return f'Repair  - {self.status}'

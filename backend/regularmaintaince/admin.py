@@ -6,7 +6,7 @@ class MaintenanceAdmin(admin.ModelAdmin):
     readonly_fields = ('id',)
 
 class RepairAdmin(admin.ModelAdmin):
-    list_display = ('id', 'property', 'status', 'completion_date', 'cost')
+    list_display = ('id', 'status', 'completion_date', 'cost')
     readonly_fields = ('id',)
 
 
