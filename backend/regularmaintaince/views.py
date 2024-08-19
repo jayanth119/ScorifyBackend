@@ -1,5 +1,5 @@
 from django.shortcuts import render
-from .serializers import MaintenanceServiceSerializer,MaintenanceScheduleSerailizer,MaintenanceUpcomingSerializer,AgentRepairSerializer
+from .serializers import MaintenanceServiceSerializer,MaintenanceScheduleSerailizer,MaintenanceUpcomingSerializer,AgentRepairSerializer,RepairSerializer,TenantOpenRepairSerializer,TenantRepairHistorySerializer
 from rest_framework.views import APIView
 from .models import Maintenance,Repair
 from rest_framework.response import Response
@@ -41,4 +41,20 @@ class AgentOpenRepairView(APIView):
     def get(self,request):
         repair = Repair.objects.filter(reported_by='agent')
         serializer = AgentRepairSerializer(repair,many=True)
+        return Response(serializer.data,status=status.HTTP_200_OK)
+class LandlordOpenRepairView(APIView):
+    def get(self,request):
+        repair = Repair.objects.filter(reported_by='landlord')
+        serializer = RepairSerializer(repair,many=True)
+        return Response(serializer.data,status=status.HTTP_200_OK)
+    
+class TenantOpenRepairView(APIView):
+    def get(self,request):
+        repair = Repair.objects.filter(reported_by='tenant')
+        serializer = TenantOpenRepairSerializer(repair,many=True)
+        return Response(serializer.data,status=status.HTTP_200_OK)
+class TenantRepairHistoryView(APIView):
+    def get(self,request):
+        repair = Repair.objects.filter(reported_by='tenant')
+        serializer = TenantRepairHistorySerializer(repair,many=True)
         return Response(serializer.data,status=status.HTTP_200_OK)

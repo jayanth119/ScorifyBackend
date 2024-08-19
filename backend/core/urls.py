@@ -1,6 +1,7 @@
 from django.urls import path
 from core.views import LandlordDetailView, TenantDetailView, AgentDetailView, LandlordListView, TenantListView, AgentListView, PropertyListView , PropertyDetailView
-
+from .views import LandlordReportUploadView
+from django.views.decorators.csrf import csrf_exempt
 urlpatterns = [
     # Landlord URLs
     path('landlords/', LandlordListView.as_view(), name='landlord-list'),
@@ -15,4 +16,8 @@ urlpatterns = [
     path('agents/<uuid:id>/', AgentDetailView.as_view(), name='agent-detail'),
      path('properties/', PropertyListView.as_view(), name='property-list'),
     path('c/<uuid:id>/', PropertyDetailView.as_view(), name='property-detail'),
+    path('landlords/<uuid:landlord_uuid>/upload-report/', csrf_exempt(LandlordReportUploadView.as_view()), name='upload-report'),
+
 ]
+
+

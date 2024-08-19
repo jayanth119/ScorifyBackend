@@ -1,3 +1,4 @@
+from os import link
 from django.shortcuts import render
 from rest_framework_simplejwt.tokens import RefreshToken
 from .serializers import RegisterSerializer,UserLoginSerializer,ForgotPasswordSerializer,ChangePasswordSerializer
@@ -24,15 +25,42 @@ def get_tokens_for_user(user):
     }
 
 
+from django.core.files.storage import FileSystemStorage
+
 class RegisterView(APIView):
-    def post(self,request):
+    def post(self, request):
         serializer = RegisterSerializer(data=request.data)
         if serializer.is_valid():
-            user = serializer.save()
-            token_data = get_tokens_for_user(user)
-            return Response(token_data,status=status.HTTP_201_CREATED)
-        return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)
-    
+            email = serializer.validated_data['email']
+            user_type = serializer.validated_data['user_type']
+            
+            # Handle the file upload separately
+            profile_photo = serializer.validated_data.get('profile_photo')
+            if profile_photo:
+                fs = FileSystemStorage()
+                filename = fs.save(profile_photo.name, profile_photo)
+                file_url = fs.url(filename)
+
+            # Store other data in the session (excluding the file)
+            user_data = serializer.validated_data.copy()
+            user_data.pop('profile_photo', None)  # Remove profile photo from session data
+
+            otp = random.randint(100000, 999999)
+            request.session['user_data'] = user_data
+            request.session['otp'] = otp
+            request.session['profile_photo_path'] = filename  # Store the file path
+
+            # Send OTP to email
+            send_mail(
+                subject="Your OTP Code",
+                message=f"Your OTP code is {otp}.",
+                from_email="your_email@example.com",
+                recipient_list=[email],
+            )
+
+            return Response({"message": "OTP sent to your email. Please verify to complete registration."}, status=status.HTTP_200_OK)
+        
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class LoginView(APIView):
     def post(self,request):
@@ -128,19 +156,41 @@ class SendOTPView(APIView):
 
         return Response({"message": "OTP sent successfully."}, status=status.HTTP_200_OK)
 class VerifyOTPView(APIView):
-    permission_classes = [IsAuthenticated]
-
     def post(self, request):
-        user = request.user
-        if user.user_type != 'tenant':
-            return Response({"error": "Only tenants can verify an OTP."}, status=status.HTTP_403_FORBIDDEN)
+        otp = request.data.get('otp')
+        session_otp = request.session.get('otp')
+        user_data = request.session.get('user_data')
+        profile_photo_path = request.session.get('profile_photo_path')
 
-        otp = request.data.get("otp")
-        if str(user.tenant_profile.otp) == otp:
-            user.tenant_profile.is_verified = True
-            user.tenant_profile.save()
-            return Response({"message": "OTP verified successfully."}, status=status.HTTP_200_OK)
-        return Response({"error": "Invalid OTP."}, status=status.HTTP_400_BAD_REQUEST)
+        if otp and session_otp and otp == str(session_otp):
+            # OTP is correct, create or verify user
+            user = CustomUser.objects.create(
+                email=user_data['email'],
+                user_type=user_data['user_type'],
+                phone=user_data.get('phone'),
+                occupation=user_data.get('occupation', '')
+            )
+            user.set_password(user_data['password'])
+            user.save()
+
+            # Link the uploaded file to the user profile
+            if profile_photo_path:
+                fs = FileSystemStorage()
+                user.profile_photo = fs.url(profile_photo_path)
+                user.save()
+
+            # Clear session data
+            del request.session['otp']
+            del request.session['user_data']
+            del request.session['profile_photo_path']
+
+            # Generate tokens
+            token_data = get_tokens_for_user(user)
+            return Response(token_data, status=status.HTTP_201_CREATED)
+
+        return Response({"error": "Invalid OTP"}, status=status.HTTP_400_BAD_REQUEST)
+
+
 
 
 
