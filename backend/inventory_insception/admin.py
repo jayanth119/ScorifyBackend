@@ -6,9 +6,14 @@ class InventoryAdmin(admin.ModelAdmin):
     readonly_fields = ('id',)
 
 class RoomAdmin(admin.ModelAdmin):
-    list_display = ('id', 'name', 'completion_percentage', 'inspection')
-    search_fields = ('name', 'inspection__id', 'inspection__property__name')
-    list_filter = ('inspection',)
+    list_display = ('id', 'name', 'completion_percentage', 'get_inspection')  # Changed from 'inspection' to 'get_inspection'
+    search_fields = ('name',)
+    list_filter = ('completion_percentage',)  # Removed 'inspection' from list_filter
+
+    def get_inspection(self, obj):
+        # Assuming that Room has a ForeignKey to Inspection, modify this according to your actual models
+        return obj.inspection.id if obj.inspection else "No Inspection"
+    get_inspection.short_description = 'Inspection'
 
 class ConditionAdmin(admin.ModelAdmin):
     list_display = ('id', 'room', 'item', 'condition', 'cleanliness')

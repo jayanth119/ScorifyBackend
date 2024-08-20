@@ -20,28 +20,32 @@ class Command(BaseCommand):
             return
 
         # Create EPC reports for each property
-        for property in properties:
+        for property in properties.iterator():  # Using iterator() for efficient large dataset processing
             for _ in range(3):  # Create 3 reports per property
-                report = EPCReport.objects.create(
-                    id=uuid.uuid4(),
-                    property=property,
-                    score=fake.random_element(elements=list("ABCDEFG")),
-                    report_date=fake.date_between(start_date='-2y', end_date='today'),
-                    report=fake.text(),
-                    current_score=fake.random_element(elements=list("ABCDEFG")),
-                    potential_score=fake.random_element(elements=list("ABCDEFG")),
-                    document=self.create_sample_document(property.id)
-                )
-                self.stdout.write(self.style.SUCCESS(f'Created EPC Report for Property: {property.address} on {report.report_date}'))
+                try:
+                    document_path = self.create_sample_document(property.id)
+                    report = EPCReport.objects.create(
+                        id=uuid.uuid4(),
+                        property=property,
+                        score=fake.random_element(elements=list("ABCDEFG")),
+                        report_date=fake.date_between(start_date='-2y', end_date='today'),
+                        report=fake.text(),
+                        current_score=fake.random_element(elements=list("ABCDEFG")),
+                        potential_score=fake.random_element(elements=list("ABCDEFG")),
+                        document=document_path
+                    )
+                    self.stdout.write(self.style.SUCCESS(f'Created EPC Report for Property: {property.address} on {report.report_date}'))
+                except Exception as e:
+                    self.stdout.write(self.style.ERROR(f'Failed to create report for Property: {property.address}, Error: {str(e)}'))
 
     def create_sample_document(self, property_id):
         # Create a sample text file as the document
         file_name = f"sample_epc_report_{property_id}.txt"
-        file_path = os.path.join(settings.MEDIA_ROOT, 'database', 'epc', str(property_id), file_name)
+        file_path = os.path.join(settings.MEDIA_ROOT, 'epc', str(property_id), file_name)
         os.makedirs(os.path.dirname(file_path), exist_ok=True)
 
         with open(file_path, 'w') as f:
             f.write("This is a sample EPC report.")
 
         # Return a relative path to be stored in the database
-        return os.path.join('database', 'epc', str(property_id), file_name)
+        return os.path.relpath(file_path, settings.MEDIA_ROOT)

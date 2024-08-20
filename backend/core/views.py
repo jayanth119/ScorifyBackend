@@ -4,7 +4,7 @@ from core.LATserializer  import LandlordSerializer, TenantSerializer, AgentSeria
 from django.shortcuts import get_object_or_404
 from django.http import JsonResponse
 from django.views import View
-from inventory_insception.models import  Inspection, Room, Condition
+from inventory_insception.models import  Inventory, Room, Condition
 from django.core.files.storage import default_storage
 import PyPDF2
 import re
@@ -15,6 +15,11 @@ import json
 import os 
 from openai import OpenAI
 from django.views.decorators.csrf import csrf_exempt
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from  .LATserializer  import TenantPropertyDashboardSerializer , LandlordPropertyDashboardSerializer
+from .models import Property
 # View to retrieve details of a Landlord by ID
 class LandlordDetailView(generics.RetrieveAPIView):
     queryset = Landlord.objects.all()
@@ -158,7 +163,7 @@ class LandlordReportUploadView(View):
         pdf_text = self.extract_text_from_pdf(file_path)
         room_data = self.analyze_document(pdf_text)
         
-        inspection = Inspection.objects.create(
+        inspection = Inventory.objects.create(
             property=property_obj,
             document=file_path,
             score=0.0,
@@ -172,7 +177,7 @@ class LandlordReportUploadView(View):
 
         for room_name, details in room_data.items():
             room, created = Room.objects.get_or_create(
-                inspection=inspection,
+                inspection=Inventory,
                 name=room_name,
                 defaults={'completion_percentage': 0.0}
             )
@@ -189,3 +194,21 @@ class LandlordReportUploadView(View):
 
         return JsonResponse({'status': 'success', 'message': 'Report processed successfully'})
 
+
+class TenantDashboardView(APIView):
+    def get(self, request, tenant_id):
+        # Assuming each tenant is associated with one primary property
+        property = Property.objects.filter(tenants__id=tenant_id).first()
+        if property:
+            serializer = TenantPropertyDashboardSerializer(property)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response({"detail": "Property not found for this tenant."}, status=status.HTTP_404_NOT_FOUND)
+    
+
+class LandlordDashboardView(APIView):
+    def get(self, request, landlord_id):
+        properties = Property.objects.filter(landlords__id=landlord_id)
+        if properties.exists():
+            serializer = LandlordPropertyDashboardSerializer(properties, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response({"detail": "No properties found for this landlord."}, status=status.HTTP_404_NOT_FOUND)
