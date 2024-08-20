@@ -3,7 +3,8 @@ from rest_framework.views import APIView
 from rest_framework import status
 from rest_framework.response import Response
 from . models import Room,Inventory
-from . serializers import RoomSerializer,InventorySerializer
+from core.models import Tenant,Landlord
+from . serializers import RoomSerializer,InventorySerializer,LandLordInventorySerializer,LandLordDetailSerializer,TenantWithLandlordSerializer
 
 
 class RoomList(APIView):
@@ -52,6 +53,34 @@ class InventoryRoomDetails(APIView):
         room=Room.objects.get(inventory=inventory)
         serializer=RoomSerializer(room)
         return Response(serializer.data,status=status.HTTP_200_OK)
+    
+
+class AgentLandlordInventoryListView(APIView):
+    def get(self,request,agent_id):
+        inventories=Inventory.objects.filter(landlord__landlord_agents__agent_id=agent_id)
+        serializer=LandLordInventorySerializer(inventories,many=True)
+        return Response(serializer.data,status=status.HTTP_200_OK)
+
+class AgentSpecificLandlordInventoryDetailView(APIView):
+    def get(self,request,agent_id,landlord_id):
+        inventories=Inventory.objects.filter(landlord__landlord_agents__agent_id=agent_id,landlord_id=landlord_id)
+        serializer=LandLordDetailSerializer(inventories,many=True)
+        return Response(serializer.data,status=status.HTTP_200_OK)
+
+
+
+
+class TenantInventoryView(APIView):
+    def get(self,request,tenant_id):
+        try:
+            tenant=Tenant.objects.get(id=tenant_id)
+        except Tenant.DoesNotExist:
+            return Response({"error": "Tenant not found"},status=status.HTTP_404_NOT_FOUND)
+        serializer=TenantWithLandlordSerializer(tenant)
+        return Response(serializer.data,status=status.HTTP_200_OK)
+
+
+    
 
         
     
