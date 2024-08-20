@@ -4,7 +4,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from .serializers import LandlordMouldSerializer,VentilationItemSerializer
 from .models import MouldHumidity,VentilationItem
-from rest_framework.generics import CreateAPIView,ListAPIView
+from rest_framework.generics import ListCreateAPIView
 from rest_framework.parsers import MultiPartParser, FormParser
 class LandlordMouldView(APIView):
     def get(self,request,uuid_id):
@@ -14,10 +14,7 @@ class LandlordMouldView(APIView):
             return Response(serializer.data,status=status.HTTP_200_OK)
         return Response({"detail":"No Mould for this user"},status=status.HTTP_404_NOT_FOUND)
 
-class VentilationItemView(CreateAPIView):
-    parser_class = [MultiPartParser, FormParser]
-    serializer_class = VentilationItemSerializer
-
-class VentilationDetailView(ListAPIView):
+class VentilationItemView(ListCreateAPIView):
     queryset = VentilationItem.objects.all()
+    parser_class = [MultiPartParser, FormParser]
     serializer_class = VentilationItemSerializer
