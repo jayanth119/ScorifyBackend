@@ -28,3 +28,8 @@ class VentilationItemSerializer(serializers.ModelSerializer):
         for image in images_data:
             VentilationImages.objects.create(item=item, image=image)
         return item
+
+class TenantMouldSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MouldHumidity
+        fields = ['id','condition','ventilation_score','mould_presence_90_days','next_ventilation_date','previous_ventilation_date']
