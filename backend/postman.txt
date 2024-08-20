@@ -1,0 +1,307 @@
+
+  1.  Register User 
+   -  Endpoint:  `/signup/`
+   -  Method:  `POST`
+   -  Body (JSON): 
+      json
+     {
+       "email": "user@example.com",
+       "password": "password123",
+       "reenter_password": "password123",
+       "profile_photo": "<file_upload>",  // Use Postman's "File" type to upload
+       "name": "John Doe",
+       "occupation": "Engineer",
+       "phone": "1234567890",
+       "user_type": "tenant"
+     }
+      
+
+  2.  Login User 
+   -  Endpoint:  `/login/`
+   -  Method:  `POST`
+   -  Body (JSON): 
+      json
+     {
+       "email": "user@example.com",
+       "password": "password123"
+     }
+      
+
+  3.  Forgot Password 
+   -  Endpoint:  `/forgot-password/`
+   -  Method:  `POST`
+   -  Body (JSON): 
+      json
+     {
+       "email": "user@example.com"
+     }
+      
+
+  4.  Change Password 
+   -  Endpoint:  `/change-password/<uuid:id>/`
+   -  Method:  `PUT`
+   -  Body (JSON): 
+      json
+     {
+       "password": "newpassword123"
+     }
+      
+
+  5.  Tenant Profile Setup 
+   -  Endpoint:  `/tenant/profile-setup/`
+   -  Method:  `POST`
+   -  Headers:  
+     - `Authorization: Bearer <JWT_TOKEN>`
+   -  Body (JSON): 
+      json
+     {
+       "name": "John Doe",
+       "phone": "1234567890",
+       "occupation": "Engineer",
+       "profile_photo": "<file_upload>"  // Use Postman's "File" type to upload
+     }
+      
+
+  6.  Agent Profile Setup 
+   -  Endpoint:  `/agent/profile-setup/`
+   -  Method:  `POST`
+   -  Headers:  
+     - `Authorization: Bearer <JWT_TOKEN>`
+   -  Body (JSON): 
+      json
+     {
+       "name": "Agent Name",
+       "phone": "0987654321",
+       "profile_photo": "<file_upload>"  // Use Postman's "File" type to upload
+     }
+      
+
+  7.  Landlord Profile Setup 
+   -  Endpoint:  `/landlord/profile-setup/`
+   -  Method:  `POST`
+   -  Headers:  
+     - `Authorization: Bearer <JWT_TOKEN>`
+   -  Body (JSON): 
+      json
+     {
+       "name": "Landlord Name",
+       "phone": "1122334455",
+       "profile_photo": "<file_upload>"  // Use Postman's "File" type to upload
+     }
+      
+
+  8.  Send OTP 
+   -  Endpoint:  `/sendotp/`
+   -  Method:  `POST`
+   -  Headers:  
+     - `Authorization: Bearer <JWT_TOKEN>`
+   -  Body:  No body required.
+
+  9.  Verify OTP 
+   -  Endpoint:  `/verifyotp/`
+   -  Method:  `POST`
+   -  Body (JSON): 
+      json
+     {
+       "otp": "123456"
+     }
+      
+
+  10.  Get Landlord Detail 
+   -  Endpoint:  `/landlords/<uuid:id>/`
+   -  Method:  `GET`
+   -  Headers:  
+     - `Authorization: Bearer <JWT_TOKEN>`
+
+  11.  Get Tenant Detail 
+   -  Endpoint:  `/tenants/<uuid:id>/`
+   -  Method:  `GET`
+   -  Headers:  
+     - `Authorization: Bearer <JWT_TOKEN>`
+
+  12.  Get Agent Detail 
+   -  Endpoint:  `/agents/<uuid:id>/`
+   -  Method:  `GET`
+   -  Headers:  
+     - `Authorization: Bearer <JWT_TOKEN>`
+
+  13.  List All Landlords 
+   -  Endpoint:  `/landlords/`
+   -  Method:  `GET`
+   -  Headers:  
+     - `Authorization: Bearer <JWT_TOKEN>`
+
+  14.  List All Tenants 
+   -  Endpoint:  `/tenants/`
+   -  Method:  `GET`
+   -  Headers:  
+     - `Authorization: Bearer <JWT_TOKEN>`
+
+  15.  List All Agents 
+   -  Endpoint:  `/agents/`
+   -  Method:  `GET`
+   -  Headers:  
+     - `Authorization: Bearer <JWT_TOKEN>`
+
+  16.  Get Property Detail 
+   -  Endpoint:  `/properties/<uuid:id>/`
+   -  Method:  `GET`
+   -  Headers:  
+     - `Authorization: Bearer <JWT_TOKEN>`
+
+  17.  List All Properties 
+   -  Endpoint:  `/properties/`
+   -  Method:  `GET`
+   -  Headers:  
+     - `Authorization: Bearer <JWT_TOKEN>`
+
+  18.  Upload Report for Landlord 
+   -  Endpoint:  `/landlords/<uuid:landlord_uuid>/upload-report/`
+   -  Method:  `POST`
+   -  Headers:  
+     - `Authorization: Bearer <JWT_TOKEN>`
+   -  Body (Form-Data): 
+     - `report`: `<file_upload>`  // Use Postman's "File" type to upload
+     - `date`: `2024-08-20`
+     - `type`: `Checkin`
+     - `title`: `Initial Inspection`
+     - `expiry_date`: `2025-08-20`
+
+  19.  Latest EPC Report 
+   -  Endpoint:  `/landlords/epc/latest/<uuid:property_id>`
+   -  Method:  `GET`
+   -  Headers:  
+     - `Authorization: Bearer <JWT_TOKEN>`
+
+  20.  List All EPC Reports for a Property 
+   -  Endpoint:  `/landlords/epc/reports/<uuid:property_id>`
+   -  Method:  `GET`
+   -  Headers:  
+     - `Authorization: Bearer <JWT_TOKEN>`
+
+  21.  EPC Scores for Last 12 Months 
+   -  Endpoint:  `/landlords/epc/scores/<uuid:property_id>`
+   -  Method:  `GET`
+   -  Headers:  
+     - `Authorization: Bearer <JWT_TOKEN>`
+
+  22.  EPC Grade Count by Agent 
+   -  Endpoint:  `/agents/epc/grades/count/<uuid:agent_id>/`
+   -  Method:  `GET`
+   -  Headers:  
+     - `Authorization: Bearer <JWT_TOKEN>`
+
+  23.  Current Gas Safety Report 
+   -  Endpoint:  `/landlords/gascur/<uuid:property_id>/`
+   -  Method:  `GET`
+   -  Headers:  
+     - `Authorization: Bearer <JWT_TOKEN>`
+
+  24.  Previous Gas Safety Reports 
+   -  Endpoint:  `/landlords/gasprev/<uuid:property_id>/`
+   -  Method:  `GET`
+   -  Headers:  
+     - `Authorization: Bearer <JWT_TOKEN>`
+
+  25.  List All Rooms 
+   -  Endpoint:  `/rooms/`
+   -  Method:  `GET`
+   -  Headers:  
+     - `Authorization: Bearer <JWT_TOKEN>`
+
+  26.  Get Room Detail 
+   -  Endpoint:  `/rooms/<uuid:room_id>/`
+   -  Method:  `GET`
+   -  Headers:  
+     - `Authorization: Bearer <JWT_TOKEN>`
+
+  27.  List All Inventories 
+   -  Endpoint:  `/landlords/inventory/`
+   -  Method:  `GET`
+   -  Headers:  
+     - `Authorization: Bearer <JWT_TOKEN>`
+
+  28.  Get Inventory Detail 
+   -  Endpoint:  `/landlords/inventory/<uuid:inventory_id>/`
+   -  Method:  `GET`
+   -  Headers:  
+     - `Authorization: Bearer <JWT_TOKEN>`
+
+  29.  List All Rooms in an Inventory 
+   -  Endpoint:  `/landlords/inventory/<uuid:inventory_id>/rooms/`
+   -  Method:  `GET`
+   -  Headers:  
+     - `Authorization: Bearer <JWT_TOKEN>`
+
+  30.  Get Specific Room in an Inventory 
+   -  Endpoint:  `/landlords/inventory/<uuid:inventory_id>/rooms/<uuid:room_id>/`
+   -  Method:  `GET`
+   -  Headers:  
+     - `Authorization: Bearer <JWT_TOKEN>`
+
+  31.  Get Agent's Landlord Inventories 
+   -  Endpoint:  `/agent/<uuid:agent_id>/landlords/inventory/`
+   -  Method:  `GET`
+   -  Headers:  
+     - `Authorization: Bearer <JWT_TOKEN>`
+
+  32.  Get Specific Landlord's Inventory for an Agent 
+   -  Endpoint:  `/agent/<uuid:agent_id>/landlords/inventory/landlord/<uuid:landlord_id>/`
+   -  Method:  `GET`
+   -  Headers:  
+     - `Authorization: Bearer <JWT_TOKEN>`
+
+  33.  Get Tenant Inventory 
+   -  Endpoint:  `/tenant
+
+/<uuid:tenant_id>/inventory/`
+   -  Method:  `GET`
+   -  Headers:  
+     - `Authorization: Bearer <JWT_TOKEN>`
+
+  34.  Get Landlord Mould Details 
+   -  Endpoint:  `/landlord/<uuid:uuid_id>/mould/`
+   -  Method:  `GET`
+   -  Headers:  
+     - `Authorization: Bearer <JWT_TOKEN>`
+
+  35.  Upload Ventilation Image 
+   -  Endpoint:  `/tenant/ventilation-image/upload/`
+   -  Method:  `POST`
+   -  Headers:  
+     - `Authorization: Bearer <JWT_TOKEN>`
+   -  Body (Form-Data): 
+     - `image`: `<file_upload>`  // Use Postman's "File" type to upload
+     - `description`: `Ventilation Image Description`
+
+  36.  List All Ventilation Images 
+   -  Endpoint:  `/tenant/ventilation-image/`
+   -  Method:  `GET`
+   -  Headers:  
+     - `Authorization: Bearer <JWT_TOKEN>`
+
+  37.  Get Landlord Maintenance Service History 
+   -  Endpoint:  `/landlord/<uuid:user_id>/regular-maintenance/service-history/`
+   -  Method:  `GET`
+   -  Headers:  
+     - `Authorization: Bearer <JWT_TOKEN>`
+
+  38.  Get Agent Regular Maintenance 
+   -  Endpoint:  `/agent/<uuid:user_id>/regular-maintenance/`
+   -  Method:  `GET`
+   -  Headers:  
+     - `Authorization: Bearer <JWT_TOKEN>`
+
+  39.  Get Tenant Repair History 
+   -  Endpoint:  `/tenant/<uuid:user_id>/repair-history/`
+   -  Method:  `GET`
+   -  Headers:  
+     - `Authorization: Bearer <JWT_TOKEN>`
+
+  40.  Get Landlord Repair History 
+   -  Endpoint:  `/landlord/<uuid:user_id>/repairs/`
+   -  Method:  `GET`
+   -  Headers:  
+     - `Authorization: Bearer <JWT_TOKEN>`
+
+These are full examples for all the endpoints you might need to test using Postman. Each endpoint includes the HTTP method, required headers, and example body data for requests where applicable.
