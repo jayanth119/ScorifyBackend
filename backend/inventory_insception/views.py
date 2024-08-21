@@ -50,7 +50,7 @@ class InventoryRooms(APIView):
 class InventoryRoomDetails(APIView):
     def get(self,request,inventory_id,room_id):
         inventory=Inventory.objects.get(id=inventory_id)
-        room=Room.objects.get(inventory=inventory)
+        room=Room.objects.filter(inventory=inventory)
         serializer=RoomSerializer(room)
         return Response(serializer.data,status=status.HTTP_200_OK)
     

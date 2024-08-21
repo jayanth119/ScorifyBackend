@@ -33,9 +33,11 @@ class RegisterView(APIView):
         if serializer.is_valid():
             email = serializer.validated_data['email']
             user_type = serializer.validated_data['user_type']
+            print(user_type)
             
             # Handle the file upload separately
             profile_photo = serializer.validated_data.get('profile_photo')
+            filename = None
             if profile_photo:
                 fs = FileSystemStorage()
                 filename = fs.save(profile_photo.name, profile_photo)
@@ -178,6 +180,17 @@ class VerifyOTPView(APIView):
                 fs = FileSystemStorage()
                 user.profile_photo = fs.url(profile_photo_path)
                 user.save()
+            if user_data['user_type'] == 'landlord':
+                landlord = Landlord.objects.get(user=user.id)
+                landlord.unique_code = landlord.generate_unique_code()
+
+                landlord.save()
+                send_mail(
+                    subject="Your Unique Code",
+                    message=f"Your Unique code is {landlord.unique_code}.",
+                    from_email="jayanthunofficial@gmail.com",
+                    recipient_list=[user.email]
+                )
 
             # Clear session data
             del request.session['otp']
@@ -189,9 +202,6 @@ class VerifyOTPView(APIView):
             return Response(token_data, status=status.HTTP_201_CREATED)
 
         return Response({"error": "Invalid OTP"}, status=status.HTTP_400_BAD_REQUEST)
-
-
-
 
 
 class TenantProfileSetupView(APIView):

@@ -64,9 +64,7 @@ class PropertyListView(generics.ListAPIView):
     serializer_class = PropertySerializer
 
 
-class LandlordReportUploadView(View):
-    
-    
+class LandlordReportUploadView(APIView):
     def extract_text_from_pdf(self, pdf_path):
         with open(pdf_path, "rb") as file:
             reader = PyPDF2.PdfReader(file)
@@ -92,12 +90,10 @@ class LandlordReportUploadView(View):
         
         give only in the above mentioned format and nothing else follow it strictly.
         """
-
-        # Non-streaming request
         client = OpenAI(api_key="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")
 
         completion = client.chat.completions.create(
-            model="gpt-4o",
+            model="gpt-4",
             messages=[
                 {
                     "role": "user",
@@ -106,7 +102,6 @@ class LandlordReportUploadView(View):
             ],
         )
 
-        # Extract and return the JSON from the response
         return completion.choices[0].message.content.strip()
 
     def sanitize_folder_name(self, name):
@@ -145,39 +140,39 @@ class LandlordReportUploadView(View):
                         print(f"Saved image: {image_path}")
                 else:
                     print(f"No images found on page {page_num} for room {sanitized_room_name}.")
-    
-    
+
     def post(self, request, landlord_uuid):
         landlord = get_object_or_404(Landlord, user__id=landlord_uuid)
         property_obj = landlord.properties.first()
 
         if not property_obj:
-            return JsonResponse({'status': 'error', 'message': 'No properties associated with this landlord.'}, status=400)
+            return Response({'status': 'error', 'message': 'No properties associated with this landlord.'}, status=status.HTTP_400_BAD_REQUEST)
 
         uploaded_file = request.FILES.get('report')
         if not uploaded_file:
-            return JsonResponse({'status': 'error', 'message': 'No file uploaded.'}, status=400)
+            return Response({'status': 'error', 'message': 'No file uploaded.'}, status=status.HTTP_400_BAD_REQUEST)
 
         file_path = default_storage.save(f'reports/{uploaded_file.name}', uploaded_file)
 
         pdf_text = self.extract_text_from_pdf(file_path)
         room_data = self.analyze_document(pdf_text)
-        
+
+        # Create Inventory object
         inspection = Inventory.objects.create(
             property=property_obj,
             document=file_path,
             score=0.0,
-            date=request.POST.get('date'),
-            type=request.POST.get('type'),
-            title=request.POST.get('title'),
+            date=request.data.get('date'),
+            type=request.data.get('type'),
+            title=request.data.get('title'),
             created_by=request.user.username,
-            expiry_date=request.POST.get('expiry_date'),
+            expiry_date=request.data.get('expiry_date'),
             past_inspection=False
         )
 
         for room_name, details in room_data.items():
             room, created = Room.objects.get_or_create(
-                inspection=Inventory,
+                inspection=inspection,
                 name=room_name,
                 defaults={'completion_percentage': 0.0}
             )
@@ -192,7 +187,7 @@ class LandlordReportUploadView(View):
 
         self.extract_images_for_rooms(file_path, room_data, property_obj.id)
 
-        return JsonResponse({'status': 'success', 'message': 'Report processed successfully'})
+        return Response({'status': 'success', 'message': 'Report processed successfully'}, status=status.HTTP_200_OK)
 
 
 class TenantDashboardView(APIView):

@@ -4,7 +4,6 @@ from core.models import Property,Landlord,Agent
 # Register your models here.
 
 class Inventory(models.Model):
-    
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     property = models.ForeignKey(Property, related_name='inventory', on_delete=models.CASCADE)
     document = models.TextField()

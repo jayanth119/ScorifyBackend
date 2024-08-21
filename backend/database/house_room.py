@@ -54,7 +54,7 @@ def analyze_document(pdf_text):
     return completion.choices[0].message.content.strip()
 
 # Path to the PDF document
-pdf_path = "/content/inventory.pdf"
+pdf_path = "inventory.pdf"
 
 # Extract text from the PDF
 pdf_text = extract_text_from_pdf(pdf_path)

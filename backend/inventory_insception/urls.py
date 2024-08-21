@@ -12,3 +12,5 @@ urlpatterns = [
     path('agent/<uuid:agent_id>/landlords/inventory/landlord/<uuid:landlord_id>/', AgentSpecificLandlordInventoryDetailView.as_view(), name='agent_specific_landlord_inventory'),
      path('tenant/<uuid:tenant_id>/inventory/',TenantInventoryView.as_view(),name='tenant-inventory')
 ]
+
+	# 69948f52-60fb-4f7e-a534-8fafe222d33f

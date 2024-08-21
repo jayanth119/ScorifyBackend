@@ -12,24 +12,36 @@ class RegisterSerializer(serializers.ModelSerializer):
     name = serializers.CharField(max_length=255)
     phone = serializers.CharField(max_length=15)
     occupation = serializers.CharField(max_length=255, required=False)
+    code = serializers.CharField(write_only=True, required=False)  # Add OTP field for tenants
 
     class Meta:
         model = CustomUser
-        fields = ['email', 'password', 'password2', 'user_type', 'profile_photo', 'name', 'phone', 'occupation']
+        fields = ['email', 'password', 'password2', 'user_type', 'profile_photo', 'name', 'phone', 'occupation', 'code']
 
     def validate(self, attrs):
         if attrs['password'] != attrs['password2']:
             raise serializers.ValidationError({"password2": "Passwords do not match."})
         if len(attrs['password']) < 8:
             raise serializers.ValidationError({"password": "Password must be at least 8 characters long."})
+        
         if CustomUser.objects.filter(email=attrs['email']).exists():
             user = CustomUser.objects.get(email=attrs['email'])
             if not user.is_verified:
                 raise serializers.ValidationError({"email": "Account with this email already exists and is not verified. Please verify the account."})
             else:
                 raise serializers.ValidationError({"email": "Email already exists."})
-        return attrs
 
+        # OTP validation for tenants
+        if attrs['user_type'] == 'tenant':
+            code = attrs.get('code')
+            if not code:
+                raise serializers.ValidationError({"Code": "Code is required for tenant registration."})
+            
+            # Check if the OTP matches any landlord's unique code
+            if not Landlord.objects.filter(unique_code=code).exists():
+                raise serializers.ValidationError({"code": "Invalid CODE. No landlord with this code."})
+
+        return attrs
     def create(self, validated_data):
         user = CustomUser.objects.create(
             email=validated_data['email'],
@@ -40,6 +52,20 @@ class RegisterSerializer(serializers.ModelSerializer):
         )
         user.set_password(validated_data['password'])
         user.save()
+
+        if validated_data['user_type'] == 'tenant':
+            # Create tenant profile
+            landlord = Landlord.objects.get(unique_code=validated_data['otp'])
+            Tenant.objects.create(
+                user=user,
+                name=validated_data['name'],
+                phone=validated_data['phone'],
+                email=validated_data['email'],
+                landlord=landlord,  # Link tenant to landlord via OTP
+                occupation=validated_data.get('occupation', ''),
+                is_verified=True
+            )
+
         return user
 
 class UserLoginSerializer(serializers.Serializer):

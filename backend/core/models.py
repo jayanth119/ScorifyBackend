@@ -1,4 +1,4 @@
-import os
+import os,random
 import uuid
 from django.db import models
 from django.contrib.auth import get_user_model
@@ -31,9 +31,16 @@ class Landlord(models.Model):
     email = models.EmailField()
     properties = models.ManyToManyField('Property', related_name='landlords', blank=True)
     profile_photo = models.ImageField(upload_to=profile_photo_upload_path, null=True, blank=True)
+    unique_code = models.CharField(max_length=6,unique=True,null=True,blank=True)
 
     def __str__(self):
         return self.name
+    
+    def generate_unique_code(self):
+        while True:
+            code = str(random.randint(100000, 999999))
+            if not Landlord.objects.filter(unique_code=code).exists():
+                return code
 
 
 class Tenant(models.Model):
@@ -41,7 +48,7 @@ class Tenant(models.Model):
     name = models.CharField(max_length=255)
     phone = models.CharField(max_length=15)
     email = models.EmailField()
-    landlord = models.ForeignKey('Landlord', related_name='tenants', on_delete=models.CASCADE, null=True, blank=True)  # Allow null
+    landlord = models.ForeignKey('Landlord', related_name='tenants', on_delete=models.CASCADE, null=True, blank=True)  
     properties = models.ManyToManyField('Property', related_name='tenants', blank=True)
     otp = models.CharField(max_length=6, blank=True, null=True)
     occupation = models.CharField(max_length=255, null=True, blank=True)  # Add this line

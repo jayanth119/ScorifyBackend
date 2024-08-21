@@ -98,7 +98,7 @@ def extract_images_for_rooms(pdf_path,dic):
                 print(f"No images found on page {page_num} for room {sanitized_room_name}.")
 
 # Path to the PDF document
-pdf_path = r"C:\Users\Jayanth\Documents\GitHub\ScorifyBackend\backend\database\inventory.pdf"
+pdf_path = r"D:\ScorifyBackend\backend\database\inventory.pdf"
 
 # Extract text from the PDF
 pdf_text = extract_text_from_pdf(pdf_path)
