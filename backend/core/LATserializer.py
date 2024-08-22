@@ -20,12 +20,13 @@ class TenantSerializer(serializers.ModelSerializer):
         fields = ['id', 'name', 'phone', 'email', 'current_tenancy_score', 'landlord', 'properties']
 
 class LandlordSerializer(serializers.ModelSerializer):
-    properties = PropertyIDSerializer(many=True, read_only=True)  # Only the IDs of properties
-    tenants = TenantIDSerializer(many=True, read_only=True)  # Only the IDs of tenants
+    user_id = serializers.PrimaryKeyRelatedField(source='user', read_only=True)  # Expose user_id as the primary key
+    properties = PropertyIDSerializer(many=True, read_only=True)
+    tenants = TenantIDSerializer(many=True, read_only=True)
 
     class Meta:
         model = Landlord
-        fields = ['id', 'name', 'phone', 'email', 'properties', 'tenants']
+        fields = ['user_id', 'name', 'phone', 'email', 'properties', 'tenants']  # Use 'user_id' instead of 'id'
 
 class AgentSerializer(serializers.ModelSerializer):
     landlords = serializers.PrimaryKeyRelatedField(many=True, read_only=True)  # Only the IDs of landlords

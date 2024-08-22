@@ -2,8 +2,6 @@ from rest_framework import generics
 from core.models import Landlord, Tenant, Agent , Property 
 from core.LATserializer  import LandlordSerializer, TenantSerializer, AgentSerializer,PropertySerializer
 from django.shortcuts import get_object_or_404
-from django.http import JsonResponse
-from django.views import View
 from inventory_insception.models import  Inventory, Room, Condition
 from django.core.files.storage import default_storage
 import PyPDF2
@@ -20,11 +18,12 @@ from rest_framework.response import Response
 from rest_framework import status
 from  .LATserializer  import TenantPropertyDashboardSerializer , LandlordPropertyDashboardSerializer
 from .models import Property
+from  django.conf import settings
 # View to retrieve details of a Landlord by ID
 class LandlordDetailView(generics.RetrieveAPIView):
     queryset = Landlord.objects.all()
     serializer_class = LandlordSerializer
-    lookup_field = 'id'  # Use UUID field to look up the landlord
+    lookup_field = 'user_id'  # Use UUID field to look up the landlord
 
 # View to retrieve details of a Tenant by ID
 class TenantDetailView(generics.RetrieveAPIView):
@@ -65,44 +64,80 @@ class PropertyListView(generics.ListAPIView):
 
 
 class LandlordReportUploadView(APIView):
+    
+    def split_text_into_chunks(self, text, max_tokens=2000):
+        # Splits text into smaller chunks of max_tokens length
+        words = text.split()
+        chunks = []
+        current_chunk = []
+
+        for word in words:
+            if len(" ".join(current_chunk)) + len(word) + 1 > max_tokens:
+                chunks.append(" ".join(current_chunk))
+                current_chunk = []
+            current_chunk.append(word)
+        
+        if current_chunk:
+            chunks.append(" ".join(current_chunk))
+        
+        return chunks
+
     def extract_text_from_pdf(self, pdf_path):
-        with open(pdf_path, "rb") as file:
-            reader = PyPDF2.PdfReader(file)
-            text = ""
-            for page in reader.pages:
-                text += page.extract_text()
-            return text
+        try:
+            with open(pdf_path, "rb") as file:
+                reader = PyPDF2.PdfReader(file)
+                text = ""
+                for page in reader.pages:
+                    text += page.extract_text()
+                return text
+        except FileNotFoundError:
+            print(f"File not found: {pdf_path}")
+            return None
 
     def analyze_document(self, pdf_text):
-        prompt = f"""
-        Your task is to analyze the provided text from a property inventory report and follow these steps:
+        chunks = self.split_text_into_chunks(pdf_text)
+        results = []
 
-        Detect Room Name: Identify the name of the room described in the text.
-        Identify Related Images: Detect all the images in the document that are related to the identified room.
-        Gather Page Numbers: Collect the page numbers where these images are located.
-        Repeat for Each Room: Continue this process for each room described in the document.
+        for chunk in chunks:
+            prompt = f"""
+            Your task is to analyze the provided text from a property inventory report and follow these steps:
 
-        Avoid Misclassification: If the images are not clearly associated with a particular room, do not include them in the results. Ensure that the output is accurate and does not include hallucinated or misconceived information.
-        The text to analyze is:
-            {pdf_text}
-        Return in the following format:
-            'Room name':'list of page numbers','Another room name':'list of page numbers'
+            Detect Room Name: Identify the name of the room described in the text.
+            Identify Related Images: Detect all the images in the document that are related to the identified room.
+            Gather Page Numbers: Collect the page numbers where these images are located.
+            Repeat for Each Room: Continue this process for each room described in the document.
+
+            Avoid Misclassification: If the images are not clearly associated with a particular room, do not include them in the results. Ensure that the output is accurate and does not include hallucinated or misconceived information.
+            The text to analyze is:
+                {chunk}
+            Return the output as a JSON object where the keys are room names, and the values are lists of page numbers. 
+            """
+
+            client = OpenAI(api_key="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")
+
+            completion = client.chat.completions.create(
+                model="gpt-4",
+                messages=[
+                    {
+                        "role": "user",
+                        "content": prompt,
+                    },
+                ],
+            )
+
+            results.append(completion.choices[0].message.content.strip())
         
-        give only in the above mentioned format and nothing else follow it strictly.
-        """
-        client = OpenAI(api_key="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")
+        # Combine the results of all chunks and parse as JSON
+        combined_results = "\n".join(results)
+        
+        try:
+            # Convert the combined result into a dictionary
+            room_data = json.loads(combined_results)
+        except json.JSONDecodeError as e:
+            print(f"JSON decoding failed: {e}")
+            room_data = {}  # Handle the error gracefully
 
-        completion = client.chat.completions.create(
-            model="gpt-4",
-            messages=[
-                {
-                    "role": "user",
-                    "content": prompt,
-                },
-            ],
-        )
-
-        return completion.choices[0].message.content.strip()
+        return room_data
 
     def sanitize_folder_name(self, name):
         return re.sub(r'[\\/*?:"<>|]', "_", name)
@@ -151,44 +186,53 @@ class LandlordReportUploadView(APIView):
         uploaded_file = request.FILES.get('report')
         if not uploaded_file:
             return Response({'status': 'error', 'message': 'No file uploaded.'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Temporarily save the file to process it
+        temp_file_path = f'temp_{uploaded_file.name}'
+        with default_storage.open(temp_file_path, 'wb+') as temp_file:
+            for chunk in uploaded_file.chunks():
+                temp_file.write(chunk)
 
-        file_path = default_storage.save(f'reports/{uploaded_file.name}', uploaded_file)
+        full_temp_file_path = os.path.join(settings.MEDIA_ROOT, temp_file_path)
 
-        pdf_text = self.extract_text_from_pdf(file_path)
+        # Extract text from the PDF
+        pdf_text = self.extract_text_from_pdf(full_temp_file_path)
+        if pdf_text is None:
+            return Response({'status': 'error', 'message': 'Failed to extract text from the PDF.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+        # Analyze the document
         room_data = self.analyze_document(pdf_text)
+        
+        # Save the file after processing the data
+        final_file_path = default_storage.save(f'reports/{uploaded_file.name}', uploaded_file)
+        full_final_file_path = os.path.join(settings.MEDIA_ROOT, final_file_path)
 
         # Create Inventory object
         inspection = Inventory.objects.create(
             property=property_obj,
-            document=file_path,
+            document=final_file_path,
             score=0.0,
             date=request.data.get('date'),
             type=request.data.get('type'),
             title=request.data.get('title'),
             created_by=request.user.username,
             expiry_date=request.data.get('expiry_date'),
-            past_inspection=False
+            past_inventory=request.data.get('past_inventory', False)  # Provide a default value if not supplied
         )
 
-        for room_name, details in room_data.items():
+        for room_name, pages in room_data.items():
             room, created = Room.objects.get_or_create(
-                inspection=inspection,
+                inventory=inspection,
                 name=room_name,
                 defaults={'completion_percentage': 0.0}
             )
 
-            for item in details.get('items', []):
-                Condition.objects.create(
-                    room=room,
-                    item=item['name'],
-                    condition=item['condition'],
-                    document=None
-                )
+        self.extract_images_for_rooms(full_final_file_path, room_data, property_obj.id)
 
-        self.extract_images_for_rooms(file_path, room_data, property_obj.id)
+        # Clean up temporary file
+        default_storage.delete(temp_file_path)
 
-        return Response({'status': 'success', 'message': 'Report processed successfully'}, status=status.HTTP_200_OK)
-
+        return Response({'status': 'success', 'message': 'File uploaded and processed successfully.'}, status=status.HTTP_201_CREATED)
 
 class TenantDashboardView(APIView):
     def get(self, request, tenant_id):

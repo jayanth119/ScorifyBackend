@@ -5,7 +5,7 @@ from django.views.decorators.csrf import csrf_exempt
 urlpatterns = [
     # Landlord URLs
     path('landlords/', LandlordListView.as_view(), name='landlord-list'),
-    path('landlords/<uuid:id>/', LandlordDetailView.as_view(), name='landlord-detail'),
+    path('landlords/<uuid:user_id>/', LandlordDetailView.as_view(), name='landlord-detail'),
 
     # Tenant URLs
     path('tenants/', TenantListView.as_view(), name='tenant-list'),
