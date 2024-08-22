@@ -1,7 +1,7 @@
 from django.contrib import admin
 from .models import (
     Landlord, Property, Tenant, Agent,
-    PropertyTimeline, HousePhoto, SalesManagement, Management, LettingManagement
+    PropertyTimeline, HousePhoto, SalesManagement, Management, LettingManagement,HouseItemImages,HousePhoto
 )
 
 @admin.register(Landlord)
@@ -58,7 +58,7 @@ class PropertyTimelineAdmin(admin.ModelAdmin):
 
 @admin.register(HousePhoto)
 class HousePhotoAdmin(admin.ModelAdmin):
-    list_display = ('id', 'property', 'name', 'photo_type', 'uploaded_date')
+    list_display = ('id', 'property', 'item_type')
     readonly_fields = ('id',)
 
 @admin.register(SalesManagement)
@@ -77,3 +77,7 @@ class LettingManagementAdmin(admin.ModelAdmin):
 class ManagementAdmin(admin.ModelAdmin):
     list_display = ('id', 'agent', 'property')
     readonly_fields = ('id',)
+
+
+# admin.site.register(HousePhoto)
+admin.site.register(HouseItemImages)

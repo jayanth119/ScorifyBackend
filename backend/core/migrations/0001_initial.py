@@ -92,17 +92,6 @@ class Migration(migrations.Migration):
             field=models.ManyToManyField(blank=True, related_name='landlords', to='core.property'),
         ),
         migrations.CreateModel(
-            name='HousePhoto',
-            fields=[
-                ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
-                ('name', models.CharField(max_length=255)),
-                ('photo', models.TextField()),
-                ('photo_type', models.CharField(max_length=50)),
-                ('uploaded_date', models.DateField()),
-                ('property', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='core.property')),
-            ],
-        ),
-        migrations.CreateModel(
             name='PropertyTimeline',
             fields=[
                 ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),

@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from core.models import Landlord, Tenant, Agent, Property
+from core.models import Landlord, Tenant, Agent, Property,HousePhoto,HouseItemImages
 
 class PropertyIDSerializer(serializers.ModelSerializer):
     class Meta:
@@ -20,13 +20,12 @@ class TenantSerializer(serializers.ModelSerializer):
         fields = ['id', 'name', 'phone', 'email', 'current_tenancy_score', 'landlord', 'properties']
 
 class LandlordSerializer(serializers.ModelSerializer):
-    user_id = serializers.PrimaryKeyRelatedField(source='user', read_only=True)  # Expose user_id as the primary key
-    properties = PropertyIDSerializer(many=True, read_only=True)
-    tenants = TenantIDSerializer(many=True, read_only=True)
+    properties = PropertyIDSerializer(many=True, read_only=True)  # Only the IDs of properties
+    tenants = TenantIDSerializer(many=True, read_only=True)  # Only the IDs of tenants
 
     class Meta:
         model = Landlord
-        fields = ['user_id', 'name', 'phone', 'email', 'properties', 'tenants']  # Use 'user_id' instead of 'id'
+        fields = ['id', 'name', 'phone', 'email', 'properties', 'tenants']
 
 class AgentSerializer(serializers.ModelSerializer):
     landlords = serializers.PrimaryKeyRelatedField(many=True, read_only=True)  # Only the IDs of landlords
@@ -85,3 +84,24 @@ class LandlordPropertyDashboardSerializer(serializers.ModelSerializer):
         return [
             {"date": inspection.date, "type": inspection.type, "score": inspection.score} for inspection in inspections
         ]
+
+
+
+class HouseItemPhotoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = HouseItemImages
+        fields = ['id','status','image','upload_date']
+class HousePhotoSerializer(serializers.ModelSerializer):
+    house_item = HouseItemPhotoSerializer(many=True)
+    class Meta:
+        model = HousePhoto
+        fields = ['id','property','item_type','house_item']
+    
+    def create(self, validated_data):
+        item_data = validated_data.pop('house_item')
+        house = HousePhoto.objects.create(**validated_data)
+        for item in item_data:
+             HouseItemImages.objects.create(item=house,**item)
+        return house
+
+    

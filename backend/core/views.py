@@ -1,29 +1,24 @@
 from rest_framework import generics
-from core.models import Landlord, Tenant, Agent , Property 
-from core.LATserializer  import LandlordSerializer, TenantSerializer, AgentSerializer,PropertySerializer
+from core.models import Landlord, Tenant, Agent , Property ,HousePhoto
+from core.LATserializer  import LandlordSerializer, TenantSerializer, AgentSerializer,PropertySerializer,HousePhotoSerializer,TenantPropertyDashboardSerializer , LandlordPropertyDashboardSerializer
 from django.shortcuts import get_object_or_404
 from inventory_insception.models import  Inventory, Room, Condition
 from django.core.files.storage import default_storage
-import PyPDF2
-import re
-import fitz  # PyMuPDF
 from PIL import Image
 from io import BytesIO
-import json
-import os 
+import json,os,PyPDF2,re,fitz
 from openai import OpenAI
-from django.views.decorators.csrf import csrf_exempt
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework import status
-from  .LATserializer  import TenantPropertyDashboardSerializer , LandlordPropertyDashboardSerializer
+from rest_framework import status,generics
 from .models import Property
+from rest_framework.parsers import MultiPartParser, FormParser
 from  django.conf import settings
 # View to retrieve details of a Landlord by ID
 class LandlordDetailView(generics.RetrieveAPIView):
     queryset = Landlord.objects.all()
     serializer_class = LandlordSerializer
-    lookup_field = 'user_id'  # Use UUID field to look up the landlord
+    lookup_field = 'id'  # Use UUID field to look up the landlord
 
 # View to retrieve details of a Tenant by ID
 class TenantDetailView(generics.RetrieveAPIView):
@@ -234,6 +229,7 @@ class LandlordReportUploadView(APIView):
 
         return Response({'status': 'success', 'message': 'File uploaded and processed successfully.'}, status=status.HTTP_201_CREATED)
 
+
 class TenantDashboardView(APIView):
     def get(self, request, tenant_id):
         # Assuming each tenant is associated with one primary property
@@ -251,3 +247,24 @@ class LandlordDashboardView(APIView):
             serializer = LandlordPropertyDashboardSerializer(properties, many=True)
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response({"detail": "No properties found for this landlord."}, status=status.HTTP_404_NOT_FOUND)
+
+class HousePhotoView(APIView):
+    parser_classes = [MultiPartParser,FormParser]
+    def get(self, request, *args, **kwargs):
+        house_photos = HousePhoto.objects.all()
+        serializer = HousePhotoSerializer(house_photos, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def post(self, request, *args, **kwargs):
+        property_id = kwargs.get('property_id')
+        try :
+            instance = Property.objects.get(id=property_id)
+        except Property.DoesNotExist:
+            return Response({"error": "Property not found"}, status=status.HTTP_404_NOT_FOUND)
+        request_data = request.data.copy()
+        request_data['property'] = instance.id
+        serializer = HousePhotoSerializer(data=request_data)
+        if serializer.is_valid():
+            house_photo = serializer.save()
+            return Response(HousePhotoSerializer(house_photo).data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

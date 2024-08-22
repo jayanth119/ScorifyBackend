@@ -150,10 +150,23 @@ class PropertyTimeline(models.Model):
 class HousePhoto(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     property = models.ForeignKey(Property, on_delete=models.CASCADE)
-    name = models.CharField(max_length=255)
-    photo = models.TextField()
-    photo_type = models.CharField(max_length=50)
-    uploaded_date = models.DateField()
+    item_type = models.CharField(max_length=255)
 
     def __str__(self):
-        return f'Photo - {self.property} - {self.photo_type}'
+        return f'Photo - {self.property} - {self.item_type}'
+
+class HouseItemImages(models.Model):
+    STATUS_CHOICES = (
+        ('checkin', 'Check-in'),
+        ('checkout', 'Checkout'),
+        ('inspection', 'Inspection'),
+        ('services', 'Services'),
+    )
+    id = models.UUIDField(primary_key=True,default=uuid.uuid4,editable=False)
+    status = models.CharField(max_length=50,choices=STATUS_CHOICES)
+    item = models.ForeignKey(HousePhoto,on_delete=models.CASCADE,related_name='house_item')
+    upload_date = models.DateField(auto_now=True)
+    image = models.ImageField(upload_to='house_photos/')
+
+    def __str__(self) -> str:
+        return f' {self.item} {self.status} '
