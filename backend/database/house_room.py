@@ -64,4 +64,4 @@ pdf_text = extract_text_from_pdf(pdf_path)
 json_output = analyze_document(pdf_text)
 
 # Print the JSON output
-print(json_output)
+print(type(json_output))

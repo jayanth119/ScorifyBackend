@@ -1,5 +1,5 @@
 from rest_framework import generics
-from core.models import Landlord, Tenant, Agent , Property ,HousePhoto
+from core.models import Landlord, Tenant, Agent , Property ,HousePhoto ,HouseItemImages
 from core.LATserializer  import LandlordSerializer, TenantSerializer, AgentSerializer,PropertySerializer,HousePhotoSerializer,TenantPropertyDashboardSerializer , LandlordPropertyDashboardSerializer
 from django.shortcuts import get_object_or_404
 from inventory_insception.models import  Inventory, Room, Condition
@@ -14,6 +14,9 @@ from rest_framework import status,generics
 from .models import Property
 from rest_framework.parsers import MultiPartParser, FormParser
 from  django.conf import settings
+
+client = OpenAI(api_key="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")
+
 # View to retrieve details of a Landlord by ID
 class LandlordDetailView(generics.RetrieveAPIView):
     queryset = Landlord.objects.all()
@@ -59,7 +62,7 @@ class PropertyListView(generics.ListAPIView):
 
 
 class LandlordReportUploadView(APIView):
-    
+
     def split_text_into_chunks(self, text, max_tokens=2000):
         # Splits text into smaller chunks of max_tokens length
         words = text.split()
@@ -90,49 +93,64 @@ class LandlordReportUploadView(APIView):
             return None
 
     def analyze_document(self, pdf_text):
-        chunks = self.split_text_into_chunks(pdf_text)
-        results = []
+        # Define the prompt based on the refined instructions
+        prompt = f"""
+        You are a highly capable assistant tasked with extracting detailed room information from an inventory report. Your objectives are:
 
-        for chunk in chunks:
-            prompt = f"""
-            Your task is to analyze the provided text from a property inventory report and follow these steps:
+        1. Identify and list each room by name.
+        2. Extract the contents within each room, such as furniture, fixtures, appliances, and other items.
+        3. Add a "defects" field to each room, but only include significant defects or damages. Ignore minor issues that do not warrant attention. Defects should be based on both the text descriptions and a thorough analysis of the images related to each room. If no significant defects are found, explicitly state "No significant defects identified."
 
-            Detect Room Name: Identify the name of the room described in the text.
-            Identify Related Images: Detect all the images in the document that are related to the identified room.
-            Gather Page Numbers: Collect the page numbers where these images are located.
-            Repeat for Each Room: Continue this process for each room described in the document.
+        Return in JSON format for each room with room name, item name, and defects.
+        The document content is as follows:
+        {pdf_text}
+        """
 
-            Avoid Misclassification: If the images are not clearly associated with a particular room, do not include them in the results. Ensure that the output is accurate and does not include hallucinated or misconceived information.
-            The text to analyze is:
-                {chunk}
-            Return the output as a JSON object where the keys are room names, and the values are lists of page numbers. 
-            """
+        # Non-streaming request
+        completion = client.chat.completions.create(
+            model="gpt-4o",
+            messages=[
+                {
+                    "role": "user",
+                    "content": prompt,
+                },
+            ],
+        )
 
-            client = OpenAI(api_key="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")
+        # Extract and return the JSON from the response
+        return completion.choices[0].message.content.strip()
 
-            completion = client.chat.completions.create(
-                model="gpt-4",
-                messages=[
-                    {
-                        "role": "user",
-                        "content": prompt,
-                    },
-                ],
-            )
+    def analyze_document_for_images(self, pdf_text):
+        prompt = f"""
+        Your task is to analyze the provided text from a property inventory report and follow these steps:
 
-            results.append(completion.choices[0].message.content.strip())
-        
-        # Combine the results of all chunks and parse as JSON
-        combined_results = "\n".join(results)
-        
-        try:
-            # Convert the combined result into a dictionary
-            room_data = json.loads(combined_results)
-        except json.JSONDecodeError as e:
-            print(f"JSON decoding failed: {e}")
-            room_data = {}  # Handle the error gracefully
+        Detect Room Name: Identify the name of the room described in the text.
+        Identify Related Images: Detect all the images in the document that are related to the identified room.
+        Gather Page Numbers: Collect the page numbers where these images are located.
+        Repeat for Each Room: Continue this process for each room described in the document.
 
-        return room_data
+        Avoid Misclassification: If the images are not clearly associated with a particular room, do not include them in the results. Ensure that the output is accurate and does not include hallucinated or misconceived information.
+        The text to analyze is:
+            {pdf_text}
+        Return in the following format:
+            "Room name": "list of page numbers", "Another room name": "list of page numbers"
+
+        Give only in the above-mentioned format and nothing else. Follow it strictly.
+        """
+
+        # Non-streaming request
+        completion = client.chat.completions.create(
+            model="gpt-4o",
+            messages=[
+                {
+                    "role": "user",
+                    "content": prompt,
+                },
+            ],
+        )
+
+        # Extract and return the JSON from the response
+        return completion.choices[0].message.content.strip()
 
     def sanitize_folder_name(self, name):
         return re.sub(r'[\\/*?:"<>|]', "_", name)
@@ -151,6 +169,13 @@ class LandlordReportUploadView(APIView):
                 os.makedirs(room_folder)
 
             for page_num in pages:
+                # Ensure page_num is an integer
+                try:
+                    page_num = int(page_num)
+                except ValueError:
+                    print(f"Invalid page number: {page_num} for room {sanitized_room_name}. Skipping...")
+                    continue
+
                 page = pdf_document.load_page(page_num - 1)
                 image_list = page.get_images(full=True)
 
@@ -167,6 +192,12 @@ class LandlordReportUploadView(APIView):
                         image_path = os.path.join(room_folder, image_filename)
 
                         image.save(image_path)
+                        house_photo = HousePhoto.objects.create(property_id=property_id, item_type=sanitized_room_name)
+                        HouseItemImages.objects.create(
+                            item=house_photo,
+                            status='checkin',
+                            image=image_path
+                        )
                         print(f"Saved image: {image_path}")
                 else:
                     print(f"No images found on page {page_num} for room {sanitized_room_name}.")
@@ -196,8 +227,24 @@ class LandlordReportUploadView(APIView):
             return Response({'status': 'error', 'message': 'Failed to extract text from the PDF.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
         # Analyze the document
-        room_data = self.analyze_document(pdf_text)
+        json_output = self.analyze_document_for_images(pdf_text)
         
+        # Clean the output if necessary
+        if "```" in json_output:
+            json_output = json_output.replace("```", "")
+        
+        # Ensure the string is formatted properly as a JSON string
+        formatted_str = "{" + json_output + "}"
+        formatted_str = formatted_str.replace("'", "\"")
+
+        try:
+            room_data = json.loads(formatted_str)  # Convert JSON string to dictionary
+        except json.JSONDecodeError as e:
+            return Response({'status': 'error', 'message': f'Failed to parse JSON: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        # Process room data
+        room_json = self.analyze_document(pdf_text)
+
         # Save the file after processing the data
         final_file_path = default_storage.save(f'reports/{uploaded_file.name}', uploaded_file)
         full_final_file_path = os.path.join(settings.MEDIA_ROOT, final_file_path)

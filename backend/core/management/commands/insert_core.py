@@ -40,54 +40,54 @@ class Command(BaseCommand):
             properties.append(property)
 
         # Fetch existing agents
-        agents = list(Agent.objects.all())
-        if not agents:
-            self.stdout.write(self.style.WARNING("No agents found. Please create agents before running this script."))
-            return
+        # agents = list(Agent.objects.all())
+        # if not agents:
+        #     self.stdout.write(self.style.WARNING("No agents found. Please create agents before running this script."))
+        #     return
 
-        # Create Management records
-        for _ in range(5):
-            Management.objects.create(
-                agent=random.choice(agents),
-                property=random.choice(properties),
-                details=fake.text(),
-            )
+        # # Create Management records
+        # for _ in range(5):
+        #     Management.objects.create(
+        #         agent=random.choice(agents),
+        #         property=random.choice(properties),
+        #         details=fake.text(),
+        #     )
 
-        # Create LettingManagement records
-        for _ in range(5):
-            LettingManagement.objects.create(
-                agent=random.choice(agents),
-                tenant_property=random.choice(properties),
-                landlord_property=random.choice(properties),
-                details=fake.text(),
-            )
+        # # Create LettingManagement records
+        # for _ in range(5):
+        #     LettingManagement.objects.create(
+        #         agent=random.choice(agents),
+        #         tenant_property=random.choice(properties),
+        #         landlord_property=random.choice(properties),
+        #         details=fake.text(),
+        #     )
 
-        # Create SalesManagement records
-        for _ in range(5):
-            SalesManagement.objects.create(
-                agent=random.choice(agents),
-                landlord_property=random.choice(properties),
-                details=fake.text(),
-            )
+        # # Create SalesManagement records
+        # for _ in range(5):
+        #     SalesManagement.objects.create(
+        #         agent=random.choice(agents),
+        #         landlord_property=random.choice(properties),
+        #         details=fake.text(),
+        #     )
 
-        # Create PropertyTimeline records
-        for _ in range(5):
-            PropertyTimeline.objects.create(
-                property=random.choice(properties),
-                date=fake.date_this_year(),
-                maintenance_repair_type=fake.word(),
-                performed_by=fake.name(),
-                details=fake.text(),
-            )
+        # # Create PropertyTimeline records
+        # for _ in range(5):
+        #     PropertyTimeline.objects.create(
+        #         property=random.choice(properties),
+        #         date=fake.date_this_year(),
+        #         maintenance_repair_type=fake.word(),
+        #         performed_by=fake.name(),
+        #         details=fake.text(),
+        #     )
 
-        # Create HousePhoto records
-        for _ in range(5):
-            HousePhoto.objects.create(
-                property=random.choice(properties),
-                name=fake.word(),
-                photo=fake.image_url(),
-                photo_type=random.choice(['Floor Plan', 'Interior', 'Exterior']),
-                uploaded_date=fake.date_this_year(),
-            )
+        # # Create HousePhoto records
+        # for _ in range(5):
+        #     HousePhoto.objects.create(
+        #         property=random.choice(properties),
+        #         name=fake.word(),
+        #         photo=fake.image_url(),
+        #         photo_type=random.choice(['Floor Plan', 'Interior', 'Exterior']),
+        #         uploaded_date=fake.date_this_year(),
+        #     )
 
         self.stdout.write(self.style.SUCCESS("Successfully inserted data into Property, Management, LettingManagement, SalesManagement, PropertyTimeline, and HousePhoto models."))
