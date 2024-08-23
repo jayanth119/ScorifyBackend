@@ -7,7 +7,8 @@ urlpatterns =[
     path('tenant/<uuid:user_id>/repair-history/',TenantRepairHistoryView.as_view(),name="tenant-repair-history"),
     path('landlord/<uuid:user_id>/regular-maintenance/schedule/',LandlordScheduleList.as_view(),name="landlord-schedule"),
     path('agent/<uuid:user_id>/regular-maintenance/',AgentMaintenanceView.as_view(),name="agent-regular-maintenance"),
-    path('tenant/regular-maintenance/schedule/',TenantScheduleList.as_view(),name="tenant-schedule"),
+    path('tenant/regular-maintenance/schedule/<uuid:tenant_id>/',TenantScheduleList.as_view(),name="tenant-schedule"),
+    path('tenant/regular-maintenance/schedule/upload/<uuid:tenant_id>/',TenantScheduleList.as_view(),name="tenant-schedule"),
   
     path('agent/<uuid:user_id>/open-repairs/',AgentOpenRepairView.as_view(),name='agent-open-repair'),
     path('landlord/<uuid:user_id>/repairs/', LandlordRepairHistoryView.as_view(), name='landlord-repair-history'),

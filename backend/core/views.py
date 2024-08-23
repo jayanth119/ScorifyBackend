@@ -1,19 +1,22 @@
+from django.conf import settings
 from rest_framework import generics
-from core.models import Landlord, Tenant, Agent , Property ,HousePhoto ,HouseItemImages
+from core.models import HouseItemImages, Landlord, Tenant, Agent , Property ,HousePhoto
 from core.LATserializer  import LandlordSerializer, TenantSerializer, AgentSerializer,PropertySerializer,HousePhotoSerializer,TenantPropertyDashboardSerializer , LandlordPropertyDashboardSerializer
 from django.shortcuts import get_object_or_404
+from django.http import JsonResponse
+from django.views import View
 from inventory_insception.models import  Inventory, Room, Condition
 from django.core.files.storage import default_storage
 from PIL import Image
 from io import BytesIO
 import json,os,PyPDF2,re,fitz
 from openai import OpenAI
+from django.views.decorators.csrf import csrf_exempt
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status,generics
-from .models import Property
 from rest_framework.parsers import MultiPartParser, FormParser
-from  django.conf import settings
+from regularmaintaince.models import Repair
 
 client = OpenAI(api_key="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")
 

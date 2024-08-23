@@ -1,5 +1,3 @@
-from os import link
-from django.shortcuts import render
 from rest_framework_simplejwt.tokens import RefreshToken
 from .serializers import RegisterSerializer,UserLoginSerializer,ForgotPasswordSerializer,ChangePasswordSerializer
 from rest_framework.views import APIView
@@ -191,6 +189,16 @@ class VerifyOTPView(APIView):
                     from_email="jayanthunofficial@gmail.com",
                     recipient_list=[user.email]
                 )
+            if user_data['user_type'] == "tenant":
+                unique_code = request.session.get('unique_code')
+                landlord  = Landlord.objects.get(unique_code=unique_code)
+                tenant = Tenant.objects.create(
+                    user=user,
+                    name=user_data['email'],
+                    landlord = landlord,
+                    phone= user_data.get('phone'),
+                )
+                tenant.save()
 
             # Clear session data
             del request.session['otp']

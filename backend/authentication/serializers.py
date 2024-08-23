@@ -53,19 +53,6 @@ class RegisterSerializer(serializers.ModelSerializer):
         user.set_password(validated_data['password'])
         user.save()
 
-        if validated_data['user_type'] == 'tenant':
-            # Create tenant profile
-            landlord = Landlord.objects.get(unique_code=validated_data['otp'])
-            Tenant.objects.create(
-                user=user,
-                name=validated_data['name'],
-                phone=validated_data['phone'],
-                email=validated_data['email'],
-                landlord=landlord,  # Link tenant to landlord via OTP
-                occupation=validated_data.get('occupation', ''),
-                is_verified=True
-            )
-
         return user
 
 class UserLoginSerializer(serializers.Serializer):

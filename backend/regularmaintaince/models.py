@@ -25,7 +25,10 @@ class Maintenance(models.Model):
     def __str__(self):
 
         return f'Maintenance - {self.id} - {self.status}'
-    
+class MaintenanceImage(models.Model):
+    maintenance = models.ForeignKey(Maintenance,related_name='images',on_delete=models.CASCADE)
+    image =  models.ImageField(upload_to='maintenance_images/')
+   
 class Repair(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.ForeignKey(customuser,on_delete=models.CASCADE,related_name='repair')

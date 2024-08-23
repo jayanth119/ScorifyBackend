@@ -17,7 +17,7 @@ class TenantSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Tenant
-        fields = ['id', 'name', 'phone', 'email', 'current_tenancy_score', 'landlord', 'properties']
+        fields = ['user', 'name', 'phone', 'email', 'landlord', 'properties']
 
 class LandlordSerializer(serializers.ModelSerializer):
     properties = PropertyIDSerializer(many=True, read_only=True)  # Only the IDs of properties
@@ -25,7 +25,7 @@ class LandlordSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Landlord
-        fields = ['id', 'name', 'phone', 'email', 'properties', 'tenants']
+        fields = ['user', 'name', 'phone', 'email', 'properties', 'tenants']
 
 class AgentSerializer(serializers.ModelSerializer):
     landlords = serializers.PrimaryKeyRelatedField(many=True, read_only=True)  # Only the IDs of landlords
@@ -33,7 +33,7 @@ class AgentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Agent
-        fields = ['id', 'name', 'phone', 'email', 'location', 'website', 'landlords', 'tenants']
+        fields = ['user', 'name', 'phone', 'email', 'location', 'website', 'landlords', 'tenants']
 
 
 class PropertySerializer(serializers.ModelSerializer):
@@ -46,7 +46,7 @@ class TenantPropertyDashboardSerializer(serializers.ModelSerializer):
         model = Property
         fields = ['address', 'zip_code', 'property_type', 'house_age', 'epc_status', 'risk_assessment_percentage', 
                   'mould_ventilation_percentage', 'next_inspection_date', 'inspection_count', 'inventory_count', 
-                  'open_repair_count', 'regular_maintenance', 'tenant', 'agent']  # Add other necessary fields
+                  'open_repair_count', 'regular_maintenance']  # Add other necessary fields
 
         def get_tenant_info(self, obj):
             return {

@@ -1,10 +1,13 @@
-from django.shortcuts import render
-from .serializers import MaintenanceServiceSerializer,MaintenanceScheduleSerailizer,AgentRepairSerializer,LandlordRepairSerializer,AgentMaintenanceSerializer,TenantRepairHistorySerializer
+
+from .serializers import MaintenanceServiceSerializer,MaintenanceScheduleSerailizer,AgentRepairSerializer,LandlordRepairSerializer,AgentMaintenanceSerializer,TenantRepairHistorySerializer,TenantMaintenanceScheduleSerializer
 from rest_framework.views import APIView
 from .models import Maintenance,Repair
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.parsers import MultiPartParser,FormParser
+from django.contrib.auth import get_user_model
 
+Customuser = get_user_model()
 class LandlordMaintenanceServiceHistory(APIView):
     def get(self,request,user_id):
        maintenance = Maintenance.objects.filter(user__id=user_id)
@@ -25,10 +28,21 @@ class LandlordScheduleList(APIView):
        return Response(serializer.data,status=status.HTTP_200_OK)
 
 class TenantScheduleList(APIView):
-    def get(self,request):
+    parser_classes = [MultiPartParser,FormParser]
+    def get(self,request,tenant_id):
        maintenance = Maintenance.objects.filter(performed_by='tenant')
        serializer = MaintenanceScheduleSerailizer(maintenance,many=True)
        return Response(serializer.data,status=status.HTTP_200_OK)
+    
+    def post(self,request,tenant_id):
+       
+       request.data['user']=tenant_id
+       serializer = TenantMaintenanceScheduleSerializer(data=request.data)
+       if serializer.is_valid():
+           serializer.save()
+           return Response(serializer.data,status=status.HTTP_200_OK)
+       return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)
+    
 
 # class LandlordUpcomingList(APIView):
 #     def get(self,request):
