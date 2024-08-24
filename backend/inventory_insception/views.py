@@ -5,8 +5,7 @@ from rest_framework.response import Response
 from . models import Room,Inventory
 from core.models import Tenant,Landlord
 from . serializers import RoomSerializer,InventorySerializer,LandLordInventorySerializer,LandLordDetailSerializer,TenantWithLandlordSerializer
-
-
+from django.shortcuts import get_object_or_404
 class RoomList(APIView):
     def get(self,request):
         room=Room.objects.all()
@@ -48,11 +47,19 @@ class InventoryRooms(APIView):
         return Response(serializer.data,status=status.HTTP_200_OK)
 
 class InventoryRoomDetails(APIView):
-    def get(self,request,inventory_id,room_id):
-        inventory=Inventory.objects.get(id=inventory_id)
-        room=Room.objects.filter(inventory=inventory)
-        serializer=RoomSerializer(room)
-        return Response(serializer.data,status=status.HTTP_200_OK)
+    def get(self, request, inventory_id, room_id):
+        # Retrieve the inventory object or return 404 if not found
+        inventory = get_object_or_404(Inventory, id=inventory_id)
+        
+        # Retrieve the room object or return 404 if not found
+        room = get_object_or_404(Room, inventory=inventory, id=room_id)
+        
+        # Serialize the room object
+        serializer = RoomSerializer(room)
+        
+        # Return the serialized data with HTTP 200 status
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
     
 
 class AgentLandlordInventoryListView(APIView):

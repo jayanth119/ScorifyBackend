@@ -51,8 +51,9 @@ INSTALLED_APPS = [
     'repair' , 
     'risk' ,
     # 'accounts' ,
-    'authentication' 
-    'drf_spectacular',
+    'authentication' ,
+    'drf_spectacular'
+
 ]
 
 MIDDLEWARE = [
@@ -65,6 +66,11 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+
+# Example configuration
+SESSION_ENGINE = 'django.contrib.sessions.backends.db'  # Default: Use database for sessions
+SESSION_COOKIE_HTTPONLY = True  # Prevents JavaScript from accessing the session cookie
+SESSION_SAVE_EVERY_REQUEST = True  # Save the session to the database on every request
 
 
 ROOT_URLCONF = 'backend.urls'

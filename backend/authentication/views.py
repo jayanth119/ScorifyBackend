@@ -13,7 +13,8 @@ from .serializers import TenantProfileSetupSerializer
 import random
 from core.models import Tenant, Agent, Landlord
 from .serializers import TenantProfileSetupSerializer, AgentProfileSetupSerializer, LandlordProfileSetupSerializer
-
+from django.core.files.storage import FileSystemStorage
+from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
 def get_tokens_for_user(user):
     refresh = RefreshToken.for_user(user)
 
@@ -22,9 +23,23 @@ def get_tokens_for_user(user):
         'access': str(refresh.access_token),
     }
 
+class CustomTokenRefreshView(APIView):
+    permission_classes = [IsAuthenticated]
 
-from django.core.files.storage import FileSystemStorage
-
+    def post(self, request, *args, **kwargs):
+        refresh_token = request.data.get('refresh')
+        if refresh_token is None:
+            return Response({"error": "Refresh token is required."}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            refresh = RefreshToken(refresh_token)
+            data = {
+                'access': str(refresh.access_token),
+                'refresh': str(refresh)
+            }
+            return Response(data, status=status.HTTP_200_OK)
+        except (TokenError, InvalidToken):
+            return Response({"error": "Invalid or expired refresh token."}, status=status.HTTP_400_BAD_REQUEST)
 class RegisterView(APIView):
     def post(self, request):
         serializer = RegisterSerializer(data=request.data)
