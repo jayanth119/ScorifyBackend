@@ -239,7 +239,7 @@ class LandlordReportUploadView(APIView):
         # Ensure the string is formatted properly as a JSON string
         formatted_str = "{" + json_output + "}"
         formatted_str = formatted_str.replace("'", "\"")
-
+        print(formatted_str)
         try:
             room_data = json.loads(formatted_str)  # Convert JSON string to dictionary
         except json.JSONDecodeError as e:
@@ -247,7 +247,15 @@ class LandlordReportUploadView(APIView):
 
         # Process room data
         room_json = self.analyze_document(pdf_text)
-
+        if "```" in room_json:
+            room_json = room_json.replace("```", "")
+            room_json = room_json.replace("json" , "")
+            print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+            print(room_json)
+            data_list = json.loads(room_json)
+            print("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@")
+            print(data_list)
+        
         # Save the file after processing the data
         final_file_path = default_storage.save(f'reports/{uploaded_file.name}', uploaded_file)
         full_final_file_path = os.path.join(settings.MEDIA_ROOT, final_file_path)
@@ -269,9 +277,8 @@ class LandlordReportUploadView(APIView):
             room, created = Room.objects.get_or_create(
                 inventory=inspection,
                 name=room_name,
-                defaults={'completion_percentage': 0.0}
+                defaults={'completion_percentage': 69.00}
             )
-
         self.extract_images_for_rooms(full_final_file_path, room_data, property_obj.id)
 
         # Clean up temporary file

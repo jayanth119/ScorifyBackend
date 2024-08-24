@@ -2,7 +2,7 @@ import os
 import re
 from openai import OpenAI
 import PyPDF2
-
+import json 
 # Initialize the OpenAI client using the API key from the environment variable
 client = OpenAI(api_key="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")
 
@@ -62,6 +62,11 @@ pdf_text = extract_text_from_pdf(pdf_path)
 
 # Analyze the document and get the JSON output
 json_output = analyze_document(pdf_text)
-
+import json
+l=["```","json"]
+for i in l:
+  if(i in json_output):
+    json_output=json_output.replace(i,"")
+room_data = json.loads(json_output)
 # Print the JSON output
-print(type(json_output))
+print(json.dumps(room_data, indent=4))

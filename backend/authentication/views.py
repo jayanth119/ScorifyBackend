@@ -8,7 +8,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.core.mail import send_mail
 from .models import CustomUser
-from core.models import Tenant
+from core.models import Tenant, User
 from .serializers import TenantProfileSetupSerializer
 import random
 from core.models import Tenant, Agent, Landlord
@@ -25,23 +25,153 @@ def get_tokens_for_user(user):
         'access': str(refresh.access_token),
     }
 
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework import status
+from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.exceptions import TokenError, InvalidToken
+from django.conf import settings
+from datetime import timedelta
+from django.contrib.auth import authenticate, get_user_model
+
+# Get the user model
+User = get_user_model()
+
+# Function to generate tokens upon user login
+def generate_tokens_for_user(user):
+    """
+    Generates a new access and refresh token for a given user.
+
+    Args:
+        user (User): The user object for whom the tokens are being generated.
+
+    Returns:
+        dict: A dictionary containing the new access and refresh tokens.
+    """
+    # Create a new refresh token for the user
+    refresh = RefreshToken.for_user(user)
+    
+    # Adding custom claims to the access token
+    access_token = refresh.access_token
+    access_token['user_id'] = str(user.id)  # Convert UUID to string
+    
+    # Set custom expiration if needed (Optional)
+    access_token.set_exp(lifetime=timedelta(minutes=settings.SIMPLE_JWT['ACCESS_TOKEN_LIFETIME']))
+    
+    return {
+        'access': str(access_token),
+        'refresh': str(refresh)
+    }
+
+# Function to refresh tokens when a valid refresh token is provided
+def refresh_tokens(refresh_token):
+    """
+    Refreshes the access and refresh tokens using a provided refresh token.
+
+    Args:
+        refresh_token (str): The refresh token used to generate new tokens.
+
+    Returns:
+        dict: A dictionary containing the new access and refresh tokens.
+    """
+    try:
+        # Attempt to create a new RefreshToken instance
+        old_refresh = RefreshToken(refresh_token)
+        
+        # Extract the user ID from the token and convert to string
+        user_id = old_refresh['user_id']
+        
+        # Retrieve the user instance based on the user ID
+        user = User.objects.get(id=user_id)
+        
+        # Generate a new refresh token for the user
+        new_refresh = RefreshToken.for_user(user)
+        
+        # Adding custom claims to the new access token
+        new_access_token = new_refresh.access_token
+        new_access_token['user_id'] = str(user.id)  # Convert UUID to string
+        
+        return {
+            'access': str(new_access_token),
+            'refresh': str(new_refresh)
+        }
+
+    except (TokenError, InvalidToken):
+        # If the token is invalid or expired, raise an appropriate error
+        raise InvalidToken("Invalid or expired refresh token.")
+    except User.DoesNotExist:
+        # If the user is not found in the database, raise an appropriate error
+        raise InvalidToken("User not found for the provided token.")
+
+# APIView to handle user login and generate tokens
+class CustomLoginView(APIView):
+    permission_classes = [AllowAny]  # Allow any user to access this view for login
+
+    def post(self, request, *args, **kwargs):
+        username = request.data.get('username')
+        password = request.data.get('password')
+        
+        # Authenticate the user using Django's built-in authentication
+        user = authenticate(username=username, password=password)
+        
+        if user is not None:
+            # If authentication is successful, generate tokens for the user
+            tokens = generate_tokens_for_user(user)
+            return Response(tokens, status=status.HTTP_200_OK)
+        else:
+            # If authentication fails, return an error response
+            return Response({"error": "Invalid credentials."}, status=status.HTTP_401_UNAUTHORIZED)
+
+# APIView to handle token refresh requests
 class CustomTokenRefreshView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]  # Ensure the user is authenticated
 
     def post(self, request, *args, **kwargs):
         refresh_token = request.data.get('refresh')
-        if refresh_token is None:
+        
+        if not refresh_token:
             return Response({"error": "Refresh token is required."}, status=status.HTTP_400_BAD_REQUEST)
         
         try:
-            refresh = RefreshToken(refresh_token)
-            data = {
-                'access': str(refresh.access_token),
-                'refresh': str(refresh)
-            }
-            return Response(data, status=status.HTTP_200_OK)
-        except (TokenError, InvalidToken):
-            return Response({"error": "Invalid or expired refresh token."}, status=status.HTTP_400_BAD_REQUEST)
+            # Refresh the tokens using the provided refresh token
+            tokens = refresh_tokens(refresh_token)
+            return Response(tokens, status=status.HTTP_200_OK)
+        
+        except InvalidToken as e:
+            # If the refresh token is invalid or expired, return an error response
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+# class CustomTokenRefreshView(APIView):
+#     permission_classes = [IsAuthenticated]
+
+#     def post(self, request, *args, **kwargs):
+#         # Get the refresh token from the request data
+#         refresh_token = request.data.get('refresh')
+#         if refresh_token is None:
+#             return Response({"error": "Refresh token is required."}, status=status.HTTP_400_BAD_REQUEST)
+        
+#         try:
+#             # Attempt to create a new RefreshToken instance
+#             old_refresh = RefreshToken(refresh_token)
+            
+#             # Get the user from the old refresh token
+#             user = old_refresh.user
+            
+#             # Generate a new refresh token for the user
+#             new_refresh = RefreshToken.for_user(user)
+            
+#             # Prepare the response with the new access and refresh tokens
+#             data = {
+#                 'access': str(new_refresh.access_token),  # New access token
+#                 'refresh': str(new_refresh)  # New refresh token
+#             }
+#             return Response(data, status=status.HTTP_200_OK)
+        
+#         except (TokenError, InvalidToken):
+#             # Handle invalid or expired refresh tokens
+#             return Response({"error": "Invalid or expired refresh token."}, status=status.HTTP_400_BAD_REQUEST)
 class RegisterView(APIView):
     def post(self, request):
         serializer = RegisterSerializer(data=request.data)
@@ -298,7 +428,8 @@ class TenantOTPVerificationView(APIView):
             tenant.is_verified = True
             tenant.otp = None  # Clear OTP after successful verification
             tenant.save()
-            return Response({"message": "OTP verification successful. Tenant account is now verified."}, status=status.HTTP_200_OK)
+            token_data = get_tokens_for_user(tenant.user)
+            return Response(token_data, status=status.HTTP_201_CREATED)
         else:
             return Response({"error": "Invalid OTP."}, status=status.HTTP_400_BAD_REQUEST)
 
