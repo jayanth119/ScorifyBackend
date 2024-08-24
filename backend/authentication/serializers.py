@@ -88,7 +88,11 @@ class TenantProfileSetupSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Tenant
-        fields = ['name', 'phone', 'occupation', 'profile_photo']
+        fields = ['name', 'email', 'occupation', 'profile_photo']
+
+class TenantOTPSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    otp = serializers.CharField(max_length=6)
 
 class AgentProfileSetupSerializer(serializers.ModelSerializer):
     profile_photo = serializers.ImageField(required=False)

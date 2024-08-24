@@ -15,6 +15,8 @@ from core.models import Tenant, Agent, Landlord
 from .serializers import TenantProfileSetupSerializer, AgentProfileSetupSerializer, LandlordProfileSetupSerializer
 from django.core.files.storage import FileSystemStorage
 from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
+from django.core.exceptions import ObjectDoesNotExist
+from django.utils.crypto import get_random_string
 def get_tokens_for_user(user):
     refresh = RefreshToken.for_user(user)
 
@@ -129,25 +131,25 @@ class ChangePasswordView(APIView):
 
 
 
-class TenantProfileSetupView(APIView):
-    permission_classes = [IsAuthenticated]
+# class TenantProfileSetupView(APIView):
+#     permission_classes = [IsAuthenticated]
 
-    def post(self, request):
-        user = request.user
-        if user.user_type != 'tenant':
-            return Response({"error": "Only tenants can set up a profile."}, status=status.HTTP_403_FORBIDDEN)
+#     def post(self, request):
+#         user = request.user
+#         if user.user_type != 'tenant':
+#             return Response({"error": "Only tenants can set up a profile."}, status=status.HTTP_403_FORBIDDEN)
 
-        serializer = TenantProfileSetupSerializer(data=request.data)
-        if serializer.is_valid():
-            tenant = Tenant.objects.get(user=user)
-            tenant.name = serializer.validated_data['name']
-            tenant.phone = serializer.validated_data['phone']
-            tenant.occupation = serializer.validated_data['occupation']
-            tenant.save()
+#         serializer = TenantProfileSetupSerializer(data=request.data)
+#         if serializer.is_valid():
+#             tenant = Tenant.objects.get(user=user)
+#             tenant.name = serializer.validated_data['name']
+#             tenant.phone = serializer.validated_data['phone']
+#             tenant.occupation = serializer.validated_data['occupation']
+#             tenant.save()
 
-            return Response({"message": "Profile setup successful."}, status=status.HTTP_200_OK)
+#             return Response({"message": "Profile setup successful."}, status=status.HTTP_200_OK)
 
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class SendOTPView(APIView):
@@ -204,16 +206,16 @@ class VerifyOTPView(APIView):
                     from_email="jayanthunofficial@gmail.com",
                     recipient_list=[user.email]
                 )
-            if user_data['user_type'] == "tenant":
-                unique_code = request.session.get('unique_code')
-                landlord  = Landlord.objects.get(unique_code=unique_code)
-                tenant = Tenant.objects.create(
-                    user=user,
-                    name=user_data['email'],
-                    landlord = landlord,
-                    phone= user_data.get('phone'),
-                )
-                tenant.save()
+            # if user_data['user_type'] == "tenant":
+            #     unique_code = request.session.get('unique_code')
+            #     landlord  = Landlord.objects.get(unique_code=unique_code)
+            #     tenant = Tenant.objects.create(
+            #         user=user,
+            #         name=user_data['email'],
+            #         landlord = landlord,
+            #         phone= user_data.get('phone'),
+            #     )
+            #     tenant.save()
 
             # Clear session data
             del request.session['otp']
@@ -225,29 +227,81 @@ class VerifyOTPView(APIView):
             return Response(token_data, status=status.HTTP_201_CREATED)
 
         return Response({"error": "Invalid OTP"}, status=status.HTTP_400_BAD_REQUEST)
+    
 
+class TenantRegisterView(APIView):
+    def post(self, request):
+        serializer = RegisterSerializer(data=request.data)
+        if serializer.is_valid():
+            user_data = serializer.validated_data
+            unique_code = user_data.get('code')
 
-class TenantProfileSetupView(APIView):
-    permission_classes = [IsAuthenticated]
+            try:
+                landlord = Landlord.objects.get(unique_code=unique_code)
+            except Landlord.DoesNotExist:
+                return Response({"error": "Invalid unique code."}, status=status.HTTP_404_NOT_FOUND)
+
+            # Handle profile photo separately
+            profile_photo = user_data.pop('profile_photo', None)
+
+            # Generate OTP
+            otp = get_random_string(length=6, allowed_chars='0123456789')
+
+            # Create the user
+            user = CustomUser.objects.create(
+                email=user_data['email'],
+                user_type=user_data['user_type'],
+                occupation=user_data.get('occupation', ''),
+                phone=user_data.get('phone', ''),
+            )
+            user.set_password(user_data['password'])
+            user.save()
+
+            # Create the tenant profile
+            tenant = Tenant.objects.create(
+                user=user,
+                name=user_data.get('name'),
+                email=user_data['email'],
+                otp=otp,
+                profile_photo=profile_photo,
+                landlord=landlord  # Link the tenant to the landlord
+            )
+
+            # Send OTP email
+            send_mail(
+                subject="Your OTP Code",
+                message=f"Your OTP code is {otp}.",
+                from_email="jayanthunoffical@gmail.com",
+                recipient_list=[user_data['email']],
+            )
+
+            return Response({"message": "OTP sent to your email. Please verify to complete registration."}, status=status.HTTP_200_OK)
+        
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+class TenantOTPVerificationView(APIView):
+    # permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        user = request.user
-        if user.user_type != 'tenant':
-            return Response({"error": "Only tenants can set up a profile."}, status=status.HTTP_403_FORBIDDEN)
+        email = request.data.get('email')
+        otp = request.data.get('otp')
 
-        serializer = TenantProfileSetupSerializer(data=request.data)
-        if serializer.is_valid():
-            tenant = Tenant.objects.get(user=user)
-            tenant.name = serializer.validated_data['name']
-            tenant.phone = serializer.validated_data['phone']
-            tenant.occupation = serializer.validated_data['occupation']
-            if 'profile_photo' in serializer.validated_data:
-                tenant.profile_photo = serializer.validated_data['profile_photo']
+        if not email or not otp:
+            return Response({"error": "Email and OTP are required for verification."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            tenant = Tenant.objects.get(email=email)
+        except Tenant.DoesNotExist:
+            return Response({"error": "Tenant profile does not exist for the given email."}, status=status.HTTP_404_NOT_FOUND)
+
+        if tenant.otp == otp:
+            tenant.is_verified = True
+            tenant.otp = None  # Clear OTP after successful verification
             tenant.save()
+            return Response({"message": "OTP verification successful. Tenant account is now verified."}, status=status.HTTP_200_OK)
+        else:
+            return Response({"error": "Invalid OTP."}, status=status.HTTP_400_BAD_REQUEST)
 
-            return Response({"message": "Profile setup successful."}, status=status.HTTP_200_OK)
-
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class AgentProfileSetupView(APIView):
     permission_classes = [IsAuthenticated]
