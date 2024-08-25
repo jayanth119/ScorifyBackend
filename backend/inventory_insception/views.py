@@ -3,9 +3,10 @@ from rest_framework.views import APIView
 from rest_framework import status
 from rest_framework.response import Response
 from . models import Room,Inventory , Condition , Inspection 
-from core.models import Tenant,Landlord
-from . serializers import RoomSerializer,InventorySerializer,LandLordInventorySerializer,LandLordDetailSerializer,TenantWithLandlordSerializer
+from core.models import Tenant,Landlord,Agent,Property
+from . serializers import RoomSerializer,InventorySerializer,LandLordInventorySerializer,LandLordDetailSerializer,TenantWithLandlordSerializer,AgentInventorySerializer
 from django.shortcuts import get_object_or_404
+from django.http import JsonResponse
 class RoomList(APIView):
     def get(self,request):
         room=Room.objects.all()
@@ -142,3 +143,25 @@ class TenantRoomDetailView(APIView):
             "completed_inspections": completed_inspections,
             "conditions": condition_list
         }, status=status.HTTP_200_OK)
+
+
+class AgentInventoryView(APIView):
+    def get(self, request, id):
+        try:
+            agent = Agent.objects.get(user__id=id)
+            landlords = agent.landlords.all()
+            data = []
+            
+            for landlord in landlords:
+                inventories = Inventory.objects.filter(property__in=landlord.properties.all())
+                serializer = AgentInventorySerializer(inventories, many=True)
+                
+                data.append({
+                    # 'landlord': landlord.id, 
+                    'inventories': serializer.data
+                })
+            
+            return Response(data, status=status.HTTP_200_OK)
+        except Agent.DoesNotExist:
+            return Response({"error": "Agent not found"}, status=status.HTTP_404_NOT_FOUND)
+

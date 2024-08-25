@@ -7,6 +7,7 @@ class Inventory(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     property = models.ForeignKey(Property, related_name='inventory', on_delete=models.CASCADE)
     document = models.TextField()
+    result = models.CharField(max_length=50)
     score = models.FloatField()
     date = models.DateField()
     type = models.CharField(max_length=50)
@@ -30,12 +31,17 @@ class Condition(models.Model):
     room = models.ForeignKey(Room, related_name='conditions', on_delete=models.CASCADE)
     item = models.CharField(max_length=100)
     def __str__(self):
-        return f'{self.item} - {self.room} - {self.condition}'
+        return f'{self.item} - {self.room}'
 class Inspection(models.Model):
     room = models.ForeignKey(Room, related_name='inspections', on_delete=models.CASCADE)
     condition = models.ForeignKey(Condition, related_name='inspections', on_delete=models.CASCADE, null=True, blank=True)
+    property = models.ForeignKey(Property,related_name='inspections',on_delete=models.CASCADE)
+    document = models.TextField()
+    result = models.CharField(max_length=50)
     score = models.FloatField()
+    created_by = models.CharField(max_length=255)
     due_date = models.DateField()
+    date = models.DateField()
     is_completed = models.BooleanField(default=False)
     notes = models.TextField(null=True, blank=True)
 

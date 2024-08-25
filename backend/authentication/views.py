@@ -336,16 +336,16 @@ class VerifyOTPView(APIView):
                     from_email="jayanthunofficial@gmail.com",
                     recipient_list=[user.email]
                 )
-            # if user_data['user_type'] == "tenant":
-            #     unique_code = request.session.get('unique_code')
-            #     landlord  = Landlord.objects.get(unique_code=unique_code)
-            #     tenant = Tenant.objects.create(
-            #         user=user,
-            #         name=user_data['email'],
-            #         landlord = landlord,
-            #         phone= user_data.get('phone'),
-            #     )
-            #     tenant.save()
+            if user_data['user_type'] == "tenant":
+                unique_code = request.session.get('unique_code')
+                landlord  = Landlord.objects.get(unique_code=unique_code)
+                tenant = Tenant.objects.create(
+                    user=user,
+                    name=user_data['email'],
+                    landlord = landlord,
+                    phone= user_data.get('phone'),
+                )
+                tenant.save()
 
             # Clear session data
             del request.session['otp']

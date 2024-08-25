@@ -1,10 +1,6 @@
 from django.urls import path
-from . views import RoomList,RoomDetails,InventoryList,InventoryDetails,InventoryRooms,InventoryRoomDetails,AgentLandlordInventoryListView,AgentSpecificLandlordInventoryDetailView,TenantInventoryView
+from . views import RoomList,RoomDetails,InventoryList,InventoryDetails,InventoryRooms,InventoryRoomDetails,AgentLandlordInventoryListView,AgentSpecificLandlordInventoryDetailView,TenantInventoryView,TenantRoomListView, TenantRoomDetailView, AgentInventoryView
 from django.urls import path
-from .views import TenantRoomListView, TenantRoomDetailView
-
-
-   
 
 urlpatterns = [
     path('rooms/',RoomList.as_view(),name='room-list'),   #Thiis 
@@ -18,6 +14,7 @@ urlpatterns = [
     path('tenant/<uuid:tenant_id>/inventory/',TenantInventoryView.as_view(),name='tenant-inventory'),
      path('tenant/<uuid:tenant_id>/rooms/', TenantRoomListView.as_view(), name='tenant-room-list'),
     path('tenant/<uuid:tenant_id>/room/<int:room_id>/', TenantRoomDetailView.as_view(), name='tenant-room-detail'),
+    path('agent/report-inventory/<uuid:id>/',AgentInventoryView.as_view(),name="agent-report-inventory")
 ]
 
 

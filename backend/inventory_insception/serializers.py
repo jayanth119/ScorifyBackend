@@ -50,7 +50,7 @@ class AgentLandlordSerializer(ModelSerializer):
 class PropertySerializer(ModelSerializer):
     class Meta:
         model=Property
-        fields=['id','name','address','description']
+        fields=['id','address']
 
 class LandlordSerializer(ModelSerializer):
     properties=PropertySerializer(many=True,read_only=True)
@@ -64,4 +64,9 @@ class TenantWithLandlordSerializer(ModelSerializer):
     class Meta:
         model=Tenant
         fields=['name','phone','email','occupation','landlord']
-    
+
+class AgentInventorySerializer(ModelSerializer):
+    property = PropertySerializer()
+    class Meta:
+        model = Inventory
+        fields = ['property','document','result','created_by','date']
