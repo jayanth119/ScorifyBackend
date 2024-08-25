@@ -2,7 +2,7 @@
 from rest_framework.views import APIView
 from rest_framework import status
 from rest_framework.response import Response
-from . models import Room,Inventory
+from . models import Room,Inventory , Condition , Inspection 
 from core.models import Tenant,Landlord
 from . serializers import RoomSerializer,InventorySerializer,LandLordInventorySerializer,LandLordDetailSerializer,TenantWithLandlordSerializer
 from django.shortcuts import get_object_or_404
@@ -86,11 +86,59 @@ class TenantInventoryView(APIView):
         serializer=TenantWithLandlordSerializer(tenant)
         return Response(serializer.data,status=status.HTTP_200_OK)
 
+class TenantRoomListView(APIView):
+    def get(self, request, tenant_id):
+        try:
+            tenant = Tenant.objects.get(user_id=tenant_id)
+        except Tenant.DoesNotExist:
+            return Response({"error": "Tenant not found"}, status=status.HTTP_404_NOT_FOUND)
 
-    
+        rooms = Room.objects.filter(inventory__property__in=tenant.properties.all())
+        room_list = []
 
-        
-    
+        for room in rooms:
+            total_items = Condition.objects.filter(room=room).count()
+            completed_inspections = Inspection.objects.filter(room=room, is_completed=True).count()
+            next_inspection = Inspection.objects.filter(room=room, is_completed=False).order_by('due_date').first()
+            next_inspection_date = next_inspection.due_date if next_inspection else None
 
-        
+            room_list.append({
+                "room_id": room.id,
+                "name": room.name,
+                "total_items": total_items,
+                "completed_inspections": completed_inspections,
+            })
 
+        return Response({
+            "next_inspection_date": next_inspection_date,
+            "rooms": room_list
+        }, status=status.HTTP_200_OK)
+
+
+class TenantRoomDetailView(APIView):
+    def get(self, request, tenant_id, room_id):
+        try:
+            tenant = Tenant.objects.get(user_id=tenant_id)
+        except Tenant.DoesNotExist:
+            return Response({"error": "Tenant not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        room = get_object_or_404(Room, id=room_id, inventory__property__in=tenant.properties.all())
+        conditions = Condition.objects.filter(room=room)
+        total_items = conditions.count()
+        completed_inspections = Inspection.objects.filter(room=room, is_completed=True).count()
+
+        condition_list = []
+        for condition in conditions:
+            condition_list.append({
+                "condition_id": condition.id,
+                "condition": condition.item  # Assuming you meant to refer to the 'item' field here
+            })
+
+        return Response({
+            "room_id": room.id,
+            "name": room.name,
+            "completion_percentage": room.completion_percentage,
+            "total_items": total_items,
+            "completed_inspections": completed_inspections,
+            "conditions": condition_list
+        }, status=status.HTTP_200_OK)

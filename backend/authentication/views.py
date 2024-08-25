@@ -235,7 +235,7 @@ class ForgotPasswordView(APIView):
             email = serializer.validated_data['email']
             user = CustomUser.objects.filter(email=email).first()
             if user :
-                link = f"http://127.0.0.1:8000/accounts/change-password/{user.id}/"
+                link = f"scorify:///change-pass/{user.id}/"
                 send_mail(
                     subject="Forgot Password",
                     message=f"Click the following to reset your password {link}",

@@ -1,6 +1,7 @@
 from django.db import models
 import uuid 
 from core.models import Property,Landlord,Agent
+
 # Register your models here.
 class Inventory(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -28,19 +29,18 @@ class Room(models.Model):
 class Condition(models.Model):
     room = models.ForeignKey(Room, related_name='conditions', on_delete=models.CASCADE)
     item = models.CharField(max_length=100)
-    condition = models.CharField(max_length=10, choices=[('good', 'Good'), ('fair', 'Fair'), ('repair', 'Repair')])
-    cleanliness = models.CharField(max_length=10, choices=[('good','Good'),('fair','Fair'),('poor','Poor')], default='good')
-    photo = models.ImageField(upload_to='media/room_conditions/', blank=True, null=True)
-
     def __str__(self):
         return f'{self.item} - {self.room} - {self.condition}'
+class Inspection(models.Model):
+    room = models.ForeignKey(Room, related_name='inspections', on_delete=models.CASCADE)
+    condition = models.ForeignKey(Condition, related_name='inspections', on_delete=models.CASCADE, null=True, blank=True)
+    score = models.FloatField()
+    due_date = models.DateField()
+    is_completed = models.BooleanField(default=False)
+    notes = models.TextField(null=True, blank=True)
 
-class Defect(models.Model):
-    room = models.ForeignKey(Room, related_name='defects', on_delete=models.CASCADE)
-    description = models.TextField()
-    
     def __str__(self):
-        return f'{self.description[:40]}... - {self.room}'
+        return f'Inspection for {self.room.name} - Due: {self.due_date} - Completed: {self.is_completed}'
 
 
 class AgentLandlord(models.Model):

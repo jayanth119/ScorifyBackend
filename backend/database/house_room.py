@@ -2,7 +2,8 @@ import os
 import re
 from openai import OpenAI
 import PyPDF2
-import json 
+import json
+
 # Initialize the OpenAI client using the API key from the environment variable
 client = OpenAI(api_key="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")
 
@@ -31,17 +32,18 @@ def analyze_document(pdf_text):
     You are a highly capable assistant tasked with extracting detailed room information from an inventory report. Your objectives are:
 
     1. Identify and list each room by name.
-    2. Extract the contents within each room such as furniture, fixtures, appliances, and other items.
-    3. Add a "defects" field to each room, but only include significant defects or damages. Ignore minor issues that do not warrant attention. Defects should be based on both the text descriptions and a thorough analysis of the images related to each room. If no significant defects are found, explicitly state "No significant defects identified."
-    
-    Return in json format for each room with room name and item name and defects.
+    2. Extract the contents within each room such as furniture, fixtures, appliances, and other items.    
+    Return in json format for each room with room name and item name.Follow the below format only:
+    room_name: [item_name1, item_name2, ...]...
+
+Follow only the Above mentionded format and nothing else.
     The document content is as follows:
     {pdf_text}
     """
 
     # Non-streaming request
     completion = client.chat.completions.create(
-        model="gpt-4o",
+        model="gpt-4o-mini",
         messages=[
             {
                 "role": "user",
@@ -62,11 +64,10 @@ pdf_text = extract_text_from_pdf(pdf_path)
 
 # Analyze the document and get the JSON output
 json_output = analyze_document(pdf_text)
-import json
 l=["```","json"]
 for i in l:
   if(i in json_output):
     json_output=json_output.replace(i,"")
 room_data = json.loads(json_output)
 # Print the JSON output
-print(json.dumps(room_data, indent=4))
+dicc = json.dumps(room_data, indent=4)

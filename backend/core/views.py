@@ -95,23 +95,24 @@ class LandlordReportUploadView(APIView):
             print(f"File not found: {pdf_path}")
             return None
 
-    def analyze_document(self, pdf_text):
+    def analyze_document(self , pdf_text):
         # Define the prompt based on the refined instructions
         prompt = f"""
         You are a highly capable assistant tasked with extracting detailed room information from an inventory report. Your objectives are:
 
         1. Identify and list each room by name.
-        2. Extract the contents within each room, such as furniture, fixtures, appliances, and other items.
-        3. Add a "defects" field to each room, but only include significant defects or damages. Ignore minor issues that do not warrant attention. Defects should be based on both the text descriptions and a thorough analysis of the images related to each room. If no significant defects are found, explicitly state "No significant defects identified."
+        2. Extract the contents within each room such as furniture, fixtures, appliances, and other items.    
+        Return in json format for each room with room name and item name.Follow the below format only:
+        room_name: [item_name1, item_name2, ...]...
 
-        Return in JSON format for each room with room name, item name, and defects.
+    Follow only the Above mentionded format and nothing else.
         The document content is as follows:
         {pdf_text}
         """
 
         # Non-streaming request
         completion = client.chat.completions.create(
-            model="gpt-4o",
+            model="gpt-4o-mini",
             messages=[
                 {
                     "role": "user",
@@ -143,7 +144,7 @@ class LandlordReportUploadView(APIView):
 
         # Non-streaming request
         completion = client.chat.completions.create(
-            model="gpt-4o",
+            model="gpt-4o-mini",
             messages=[
                 {
                     "role": "user",
@@ -246,16 +247,16 @@ class LandlordReportUploadView(APIView):
             return Response({'status': 'error', 'message': f'Failed to parse JSON: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         # Process room data
-        room_json = self.analyze_document(pdf_text)
-        if "```" in room_json:
-            room_json = room_json.replace("```", "")
-            room_json = room_json.replace("json" , "")
-            print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-            print(room_json)
-            data_list = json.loads(room_json)
-            print("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@")
-            print(data_list)
-        
+        json_output = self.analyze_document(pdf_text)
+        l=["```","json"]
+        for i in l:
+            if(i in json_output):
+                json_output=json_output.replace(i,"")
+        room_data = json.loads(json_output)
+        # Print the JSON output
+        # dicc = json.dumps(room_data, indent=4)
+        print(room_data.items())
+
         # Save the file after processing the data
         final_file_path = default_storage.save(f'reports/{uploaded_file.name}', uploaded_file)
         full_final_file_path = os.path.join(settings.MEDIA_ROOT, final_file_path)
@@ -279,6 +280,13 @@ class LandlordReportUploadView(APIView):
                 name=room_name,
                 defaults={'completion_percentage': 69.00}
             )
+
+            licst = room_data[room_name] 
+            for i in licst :
+                item , created = Condition.objects.get_or_create(
+                    room = room , 
+                    item = i 
+                )
         self.extract_images_for_rooms(full_final_file_path, room_data, property_obj.id)
 
         # Clean up temporary file

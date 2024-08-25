@@ -1,10 +1,13 @@
 from django.contrib import admin
-from .models import Room, Condition, Inventory, Defect,AgentLandlord
+from .models import Room, Inspection , Inventory,AgentLandlord, Condition
 from core.models import Tenant
 
 class InventoryAdmin(admin.ModelAdmin):
     list_display=('id','property','score','date','type','title','created_by','expiry_date','past_inventory')
     readonly_fields=('id',)
+
+class InspectionAdmin(admin.ModelAdmin):
+    list_display = [ 'room' , 'condition' ,  'score' , 'due_date' , 'is_completed' , 'notes']
 
 class RoomAdmin(admin.ModelAdmin):
     list_display=('id','name','completion_percentage','inventory')
@@ -12,13 +15,8 @@ class RoomAdmin(admin.ModelAdmin):
     list_filter=('inventory',)  
 
 class ConditionAdmin(admin.ModelAdmin):
-    list_display=('id','room','item','condition','cleanliness')
+    list_display=('id','room','item')
     search_fields=('room__name','item')
-    list_filter=('condition','room')
-
-class DefectAdmin(admin.ModelAdmin):
-    list_display=('id','room','description')
-    search_fields=('room__name','description')
 
 class AgentLandlordAdmin(admin.ModelAdmin):
     list_display=('agent','landlord')
@@ -33,7 +31,7 @@ class TenantAdmin(admin.ModelAdmin):
 
 admin.site.register(Inventory, InventoryAdmin)
 admin.site.register(Room, RoomAdmin)
+admin.site.register(Inspection, InspectionAdmin)
 admin.site.register(Condition, ConditionAdmin)
-admin.site.register(Defect, DefectAdmin)
 admin.site.register(AgentLandlord,AgentLandlordAdmin)
 # admin.site.register(Tenant,TenantAdmin)

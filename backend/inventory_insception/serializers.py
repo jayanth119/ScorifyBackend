@@ -1,5 +1,5 @@
 from rest_framework.serializers import ModelSerializer
-from . models import Room,Condition,Defect,Inventory,AgentLandlord
+from . models import Room,Condition,Inventory,AgentLandlord
 from core.models import Landlord,Property,Tenant
 
 
@@ -9,19 +9,14 @@ from core.models import Landlord,Property,Tenant
 class ConditionSerializer(ModelSerializer):
     class Meta:
         model=Condition
-        fields=['id','item','condition','cleanliness','photo']
+        fields=['id','item']
 
-class DefectSerializer(ModelSerializer):
-    class Meta:
-        model=Defect
-        fields=['id','description']
 
 class RoomSerializer(ModelSerializer):                                                                                          
     conditions=ConditionSerializer(many=True,read_only=True)
-    defects=DefectSerializer(many=True,read_only=True)
     class Meta:
         model=Room
-        fields=['id','name','completion_percentage','conditions','defects']
+        fields=['id','name','completion_percentage','conditions']
 
 class InventorySerializer(ModelSerializer):
     rooms=RoomSerializer(many=True,read_only=True)
@@ -69,3 +64,4 @@ class TenantWithLandlordSerializer(ModelSerializer):
     class Meta:
         model=Tenant
         fields=['name','phone','email','occupation','landlord']
+    
