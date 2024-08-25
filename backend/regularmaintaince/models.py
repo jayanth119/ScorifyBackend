@@ -39,7 +39,7 @@ class Repair(models.Model):
     status = models.CharField(max_length=50)
     description = models.TextField()
     completion_report = models.TextField()
-    cost = models.FloatField()
+    cost = models.FloatField() 
     reported_by = models.CharField(max_length=255)
 
     def __str__(self):
