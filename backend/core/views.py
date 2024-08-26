@@ -278,7 +278,7 @@ class LandlordReportUploadView(APIView):
 
         for room_name, pages in room_data.items():
             room, created = Room.objects.get_or_create(
-                inventory=inspection,
+                 inventory=inspection,
                 name=room_name,
                 defaults={'completion_percentage': 69.00}
             )
