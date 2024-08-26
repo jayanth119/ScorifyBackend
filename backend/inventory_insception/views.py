@@ -114,10 +114,17 @@ class TenantRoomListView(APIView):
                 "total_items": total_items,
                 "completed_inspections": completed_inspections,
             })
+        latest_inspection = Inspection.objects.filter(room__in=rooms, is_completed=True).order_by('-date').first()
+        inspection_data = {
+            "score": latest_inspection.score if latest_inspection else None,
+            "description": "waefsgdbmkyrbmgkflgvfdmsklbgrsfmkbl ,gfmsbk glfbmk glfbsmkgflbkgfsbgkfsbmgfskgfklsbrgfklbrgfkbgf"
+        }
+
 
         return Response({
             "next_inspection_date": next_inspection_date,
-            "rooms": room_list
+            "rooms": room_list , 
+            "inspection": inspection_data 
         }, status=status.HTTP_200_OK)
 
 
