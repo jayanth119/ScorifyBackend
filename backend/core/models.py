@@ -86,6 +86,7 @@ class Property(models.Model):
     house_name = models.CharField(max_length=255)
     zip_code = models.CharField(max_length=10)
     bathroom_count = models.IntegerField()
+    bedroom_count = models.IntegerField(default=0)
     living_room_count = models.IntegerField()
     property_type = models.CharField(max_length=50)
     house_age = models.IntegerField()

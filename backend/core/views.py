@@ -307,7 +307,8 @@ class TenantDashboardView(APIView):
                 serializer = TenantPropertyDashboardSerializer(properties, many=True)
                 data = {
                     'properties': serializer.data,
-                    'repair': repair
+                    'repair': repair,
+                    'inspection':properties.count()
                 }
                 return Response(data, status=status.HTTP_200_OK)
             else:
