@@ -100,6 +100,7 @@ class Property(models.Model):
     end_date = models.DateField(null=True, blank=True)
     deposit = models.FloatField(null=True, blank=True)
     details = models.TextField(null=True, blank=True)
+    score = models.FloatField(default=0.0)
     next_inspection_date = models.DateField(null=True, blank=True)
     open_repair_count = models.IntegerField(default=0)
     inspection_count = models.IntegerField(default=0)

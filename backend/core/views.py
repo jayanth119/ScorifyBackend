@@ -5,6 +5,7 @@ from core.LATserializer  import LandlordSerializer, TenantSerializer, AgentSeria
 from django.shortcuts import get_object_or_404
 from django.http import JsonResponse
 from django.views import View
+from regularmaintaince.models import Maintenance
 from inventory_insception.models import  Inventory, Room, Condition
 from django.core.files.storage import default_storage
 from PIL import Image
@@ -17,6 +18,7 @@ from rest_framework.response import Response
 from rest_framework import status,generics,permissions
 from rest_framework.parsers import MultiPartParser, FormParser
 from regularmaintaince.models import Repair
+from django.db.models import Max
 
 client = OpenAI(api_key="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")
 
@@ -303,17 +305,27 @@ class TenantDashboardView(APIView):
             properties = tenant.properties.all()
             repair = Repair.objects.filter(user=tenant.user).count()
             house_photo_count =0
+            property_data = []
             for obj in properties:
                 count = HouseItemImages.objects.filter(item__property=obj).count()
                 house_photo_count+=count
+                maintenace_count = Maintenance.objects.filter(property=obj).count()
+                last_due_date = Maintenance.objects.filter(property=obj).aggregate(Max('due_date'))['due_date__max']
+                
+                property_data.append({
+                    'last_due_date': last_due_date,
+                    'maintenance_count':maintenace_count
+                })
             if properties:
                 serializer = TenantPropertyDashboardSerializer(properties, many=True)
                 data = {
                     'properties': serializer.data,
-                    'repair': repair,
+                    'repair_count': repair,
                     'inspection':properties.count(),
                     'house_photos':house_photo_count,
-                    'heat_system':'Good'
+                    'heat_system_status':'Good',
+                    'heat_system_safety':'Good',
+                    'maintenance':property_data
                 }
                 return Response(data, status=status.HTTP_200_OK)
             else:

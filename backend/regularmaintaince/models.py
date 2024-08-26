@@ -6,7 +6,7 @@ from django.contrib.auth import get_user_model
 customuser = get_user_model()
 class Maintenance(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    # property = models.ForeignKey(Property, on_delete=models.CASCADE)
+    property = models.ForeignKey(Property, on_delete=models.CASCADE,related_name='maintenace',null=True)
     user = models.ForeignKey(customuser,on_delete=models.CASCADE,related_name='maintenance')
     score = models.FloatField()
     details = models.TextField()

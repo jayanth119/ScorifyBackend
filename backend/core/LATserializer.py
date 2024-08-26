@@ -45,7 +45,7 @@ class TenantPropertyDashboardSerializer(serializers.ModelSerializer):
     # You would include methods to calculate or retrieve the required data such as scores, counts, etc.
     class Meta:
         model = Property
-        fields = ['address', 'zip_code', 'property_type', 'house_age', 'epc_status', 'risk_assessment_percentage',
+        fields = ['address', 'zip_code', 'property_type', 'house_age', 'epc_status', 'risk_assessment_percentage','score',
                   'bathroom_count', 'living_room_count', 'bedroom_count', 'mould_ventilation_percentage', 
                   'next_inspection_date', 'inspection_count', 'inventory_count', 'open_repair_count', 
                   'regular_maintenance']
