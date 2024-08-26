@@ -116,7 +116,7 @@ class TenantRoomListView(APIView):
             })
         latest_inspection = Inspection.objects.filter(room__in=rooms, is_completed=True).order_by('-date').first()
         inspection_data = {
-            "score": latest_inspection.score if latest_inspection else None,
+            "score": latest_inspection.score if latest_inspection and latest_inspection.score is not None else 0,
             "description": "waefsgdbmkyrbmgkflgvfdmsklbgrsfmkbl ,gfmsbk glfbmk glfbsmkgflbkgfsbgkfsbmgfskgfklsbrgfklbrgfkbgf"
         }
 
