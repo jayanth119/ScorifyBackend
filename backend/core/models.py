@@ -155,7 +155,7 @@ class PropertyTimeline(models.Model):
 
 class HousePhoto(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    property = models.ForeignKey(Property, on_delete=models.CASCADE)
+    property = models.ForeignKey(Property, on_delete=models.CASCADE,related_name='house_photos')
     item_type = models.CharField(max_length=255)
 
     def __str__(self):

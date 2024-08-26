@@ -302,13 +302,18 @@ class TenantDashboardView(APIView):
             tenant = Tenant.objects.get(user=request.user)
             properties = tenant.properties.all()
             repair = Repair.objects.filter(user=tenant.user).count()
-
+            house_photo_count =0
+            for obj in properties:
+                count = HouseItemImages.objects.filter(item__property=obj).count()
+                house_photo_count+=count
             if properties:
                 serializer = TenantPropertyDashboardSerializer(properties, many=True)
                 data = {
                     'properties': serializer.data,
                     'repair': repair,
-                    'inspection':properties.count()
+                    'inspection':properties.count(),
+                    'house_photos':house_photo_count,
+                    'heat_system':'Good'
                 }
                 return Response(data, status=status.HTTP_200_OK)
             else:

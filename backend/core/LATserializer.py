@@ -41,13 +41,15 @@ class PropertySerializer(serializers.ModelSerializer):
         model = Property
         fields = ['id', 'address', 'house_name', 'zip_code', 'bathroom_count', 'living_room_count', 'property_type', 'house_age', 'floor_map_photos', 'epc_status', 'risk_assessment_percentage', 'mould_ventilation_percentage', 'gas_safety', 'heat_safety', 'start_date', 'end_date', 'deposit', 'details', 'next_inspection_date', 'open_repair_count', 'inspection_count', 'regular_maintenance', 'inventory_count']
 class TenantPropertyDashboardSerializer(serializers.ModelSerializer):
+    
     # You would include methods to calculate or retrieve the required data such as scores, counts, etc.
     class Meta:
         model = Property
-        fields = ['address', 'zip_code', 'property_type', 'house_age', 'epc_status', 'risk_assessment_percentage', 'bathroom_count','living_room_count','bedroom_count',
-                  'mould_ventilation_percentage', 'next_inspection_date', 'inspection_count', 'inventory_count', 
-                  'open_repair_count', 'regular_maintenance'] 
-
+        fields = ['address', 'zip_code', 'property_type', 'house_age', 'epc_status', 'risk_assessment_percentage',
+                  'bathroom_count', 'living_room_count', 'bedroom_count', 'mould_ventilation_percentage', 
+                  'next_inspection_date', 'inspection_count', 'inventory_count', 'open_repair_count', 
+                  'regular_maintenance']
+       
         def get_tenant_info(self, obj):
             return {
                 "name": obj.tenant.name,
@@ -59,7 +61,8 @@ class TenantPropertyDashboardSerializer(serializers.ModelSerializer):
                 "name": obj.agent.name,
                 "phone_number": obj.agent.phone
             }
-
+        
+  
         tenant = serializers.SerializerMethodField()
         agent = serializers.SerializerMethodField()
 
