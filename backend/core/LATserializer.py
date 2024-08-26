@@ -47,7 +47,7 @@ class TenantPropertyDashboardSerializer(serializers.ModelSerializer):
         model = Property
         fields = ['address', 'zip_code', 'property_type', 'house_age', 'epc_status', 'risk_assessment_percentage','score',
                   'bathroom_count', 'living_room_count', 'bedroom_count', 'mould_ventilation_percentage', 
-                  'next_inspection_date', 'inspection_count', 'inventory_count', 'open_repair_count', 
+                  'next_inspection_date', 'inspection_repair_count', 'inventory_count', 'open_repair_count', 
                   'regular_maintenance']
        
         def get_tenant_info(self, obj):

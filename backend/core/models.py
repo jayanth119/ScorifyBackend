@@ -103,7 +103,7 @@ class Property(models.Model):
     score = models.FloatField(default=0.0)
     next_inspection_date = models.DateField(null=True, blank=True)
     open_repair_count = models.IntegerField(default=0)
-    inspection_count = models.IntegerField(default=0)
+    inspection_repair_count = models.IntegerField(default=0)
     regular_maintenance = models.BooleanField(default=False)
     inventory_count = models.IntegerField(default=0)
 

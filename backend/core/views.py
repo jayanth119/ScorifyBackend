@@ -323,8 +323,8 @@ class TenantDashboardView(APIView):
                     'repair_count': repair,
                     'inspection':properties.count(),
                     'house_photos':house_photo_count,
-                    'heat_system_status':'Good',
-                    'heat_system_safety':'Good',
+                    'heat':'Good',
+                    'safety':'Good',
                     'maintenance':property_data
                 }
                 return Response(data, status=status.HTTP_200_OK)
