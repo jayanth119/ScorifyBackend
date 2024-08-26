@@ -17,7 +17,8 @@ urlpatterns = [
      path('properties/', PropertyListView.as_view(), name='property-list'),
     path('c/<uuid:id>/', PropertyDetailView.as_view(), name='property-detail'),
     path('landlords/<uuid:landlord_uuid>/upload-report/', csrf_exempt(LandlordReportUploadView.as_view()), name='upload-report'),
-    path('tenant-dashboard/<uuid:tenant_id>/', TenantDashboardView.as_view(), name='tenant_dashboard'),
+ path('tenant/dashboard/', TenantDashboardView.as_view(), name='tenant_dashboard'),
+
     path('landlord-dashboard/<uuid:landlord_id>/', LandlordDashboardView.as_view(), name='landlord_dashboard'),
     path('tenant/house-photo/',HousePhotoView.as_view(),name="house-photo"),
     path('tenant/<uuid:property_id>/house-photo/',HousePhotoView.as_view(),name="house-photo-upload")

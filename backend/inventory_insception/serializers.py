@@ -57,7 +57,7 @@ class LandlordSerializer(ModelSerializer):
     inventory=InventorySerializer(many=True,read_only=True)
     class Meta:
         model=Landlord
-        fields=['id','name','phone','email','inventory','properties']
+        fields=['user','name','phone','email','inventory','properties']
 
 class TenantWithLandlordSerializer(ModelSerializer):
     landlord=LandlordSerializer(read_only=True)

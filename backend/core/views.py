@@ -14,7 +14,7 @@ from openai import OpenAI
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework import status,generics
+from rest_framework import status,generics,permissions
 from rest_framework.parsers import MultiPartParser, FormParser
 from regularmaintaince.models import Repair
 
@@ -296,14 +296,26 @@ class LandlordReportUploadView(APIView):
 
 
 class TenantDashboardView(APIView):
-    def get(self, request, tenant_id):
-        # Assuming each tenant is associated with one primary property
-        property = Property.objects.filter(tenants__id=tenant_id).first()
-        if property:
-            serializer = TenantPropertyDashboardSerializer(property)
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        return Response({"detail": "Property not found for this tenant."}, status=status.HTTP_404_NOT_FOUND)
-    
+    permission_classes =[permissions.IsAuthenticated]
+    def get(self, request):
+        try:
+            tenant = Tenant.objects.get(user=request.user)
+            properties = tenant.properties.all()
+            repair = Repair.objects.filter(user=tenant.user).count()
+
+            if properties:
+                serializer = TenantPropertyDashboardSerializer(properties, many=True)
+                data = {
+                    'properties': serializer.data,
+                    'repair': repair
+                }
+                return Response(data, status=status.HTTP_200_OK)
+            else:
+                return Response({"detail": "Property not found for this tenant."}, status=status.HTTP_404_NOT_FOUND)
+        
+        except Tenant.DoesNotExist:
+            return Response({"detail": "Tenant not found."}, status=status.HTTP_404_NOT_FOUND)
+
 
 class LandlordDashboardView(APIView):
     def get(self, request, landlord_id):

@@ -1,6 +1,6 @@
 # from rest_framework.decorators import api_view
 from rest_framework.views import APIView
-from rest_framework import status
+from rest_framework import status,permissions
 from rest_framework.response import Response
 from . models import Room,Inventory , Condition , Inspection 
 from core.models import Tenant,Landlord,Agent,Property
@@ -79,18 +79,23 @@ class AgentSpecificLandlordInventoryDetailView(APIView):
 
 
 class TenantInventoryView(APIView):
-    def get(self,request,tenant_id):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
         try:
-            tenant=Tenant.objects.get(id=tenant_id)
+            tenant = Tenant.objects.get(user=request.user)
         except Tenant.DoesNotExist:
-            return Response({"error": "Tenant not found"},status=status.HTTP_404_NOT_FOUND)
-        serializer=TenantWithLandlordSerializer(tenant)
-        return Response(serializer.data,status=status.HTTP_200_OK)
+            return Response({"error": "Tenant not found"}, status=status.HTTP_404_NOT_FOUND)
+        
+        serializer = TenantWithLandlordSerializer(tenant)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
 
 class TenantRoomListView(APIView):
-    def get(self, request, tenant_id):
+    permission_classes = [permissions.IsAuthenticated]
+    def get(self, request):
         try:
-            tenant = Tenant.objects.get(user_id=tenant_id)
+            tenant = Tenant.objects.get(user=request.user)
         except Tenant.DoesNotExist:
             return Response({"error": "Tenant not found"}, status=status.HTTP_404_NOT_FOUND)
 
@@ -117,9 +122,9 @@ class TenantRoomListView(APIView):
 
 
 class TenantRoomDetailView(APIView):
-    def get(self, request, tenant_id, room_id):
+    def get(self, request, room_id):
         try:
-            tenant = Tenant.objects.get(user_id=tenant_id)
+            tenant = Tenant.objects.get(user=request.user)
         except Tenant.DoesNotExist:
             return Response({"error": "Tenant not found"}, status=status.HTTP_404_NOT_FOUND)
 

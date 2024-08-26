@@ -6,7 +6,7 @@ from .models import Maintenance,Repair
 from core.models import HouseItemImages , HousePhoto ,Tenant
 from regularmaintaince.models import Repair
 from rest_framework.response import Response
-from rest_framework import status
+from rest_framework import status,permissions
 from rest_framework.parsers import MultiPartParser,FormParser
 from django.contrib.auth import get_user_model
 from django.core.files.base import ContentFile
@@ -36,19 +36,22 @@ class LandlordScheduleList(APIView):
 
 class TenantScheduleList(APIView):
     parser_classes = [MultiPartParser,FormParser]
-    def get(self,request,tenant_id):
-       maintenance = Maintenance.objects.filter(performed_by='tenant')
+    permission_classes = [permissions.IsAuthenticated]
+    def get(self,request):
+       maintenance = maintenance = Maintenance.objects.filter(user=request.user)
        serializer = MaintenanceScheduleSerailizer(maintenance,many=True)
        return Response(serializer.data,status=status.HTTP_200_OK)
     
-    def post(self,request,tenant_id):
+    def post(self,request):
        
-       request.data['user']=tenant_id
-       serializer = TenantMaintenanceScheduleSerializer(data=request.data)
-       if serializer.is_valid():
-           serializer.save()
-           return Response(serializer.data,status=status.HTTP_200_OK)
-       return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)
+        request.data['user'] = request.user.id
+        serializer = TenantMaintenanceScheduleSerializer(data=request.data)
+        
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
     
 
 # class LandlordUpcomingList(APIView):
@@ -73,8 +76,8 @@ class LandlordRepairHistoryView(APIView):
             return Response({"detail": "No repairs found for this user."}, status=status.HTTP_404_NOT_FOUND)
 
 class TenantRepairHistoryView(APIView):
-    def get(self,request,user_id):
-        repairs = Repair.objects.filter(user__id=user_id)
+    def get(self,request):
+        repairs = Repair.objects.filter(user=request.user)
         if repairs.exists():
             serializer = TenantRepairHistorySerializer(repairs, many=True)
             return Response(serializer.data, status=status.HTTP_200_OK)
@@ -82,8 +85,8 @@ class TenantRepairHistoryView(APIView):
             return Response({"detail": "No repairs found for this user."}, status=status.HTTP_404_NOT_FOUND)
 
 class TenantInspectionView(APIView):
-    def post(self, request, tenant_id):
-        tenant = Tenant.objects.get(user_id=tenant_id)
+    def post(self, request):
+        tenant = Tenant.objects.get(user_id=request.user)
         property_id = request.data.get('property_id')
         item_type = request.data.get('item_type')
         ar = request.data.get('condition')

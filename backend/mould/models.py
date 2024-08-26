@@ -23,7 +23,7 @@ class MouldHumidity(models.Model):
 class VentilationItem(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     status = models.CharField(max_length=255)
-
+    user = models.ForeignKey(customUser,on_delete=models.CASCADE,related_name='ventilation_items')
     def __str__(self) -> str:
         return f"Ventilation - {self.id}"
 
