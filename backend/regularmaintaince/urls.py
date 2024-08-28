@@ -15,7 +15,7 @@ urlpatterns =[
 
     path('agent/<uuid:user_id>/open-repairs/',AgentOpenRepairView.as_view(),name='agent-open-repair'),
     path('landlord/<uuid:user_id>/repairs/', LandlordRepairHistoryView.as_view(), name='landlord-repair-history'),
-    path('tenant/inspect/', TenantInspectionView.as_view(), name='tenant-inspection'),
+    path('tenant/<uuid:user_id>/inspect/', TenantInspectionView.as_view(), name='tenant-inspection'),
 
 
 ]

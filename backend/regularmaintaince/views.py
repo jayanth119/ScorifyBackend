@@ -89,108 +89,104 @@ class TenantInspectionView(APIView):
         tenant = Tenant.objects.get(user_id=request.user)
         property_id = request.data.get('property_id')
         item_type = request.data.get('item_type')
-        ar = request.data.get('condition')
+        ar = request.data.get('condition', '').lower()
         room_id = request.data.get('room_id')
-        
-        # Check if the image is being uploaded as a file
-        image_file = request.FILES.get('image')  # Image uploaded as a file
-        
-        if not image_file:
-            return Response({"error": "No image provided"}, status=status.HTTP_400_BAD_REQUEST)
-        
-        # Convert the uploaded file to a base64 string (in case you need it)
-        image_base64 = base64.b64encode(image_file.read()).decode('utf-8')
-        
-        # Describe the image (this should be adapted based on how you process images)
-        image_description = "The image is of a {} with the following notable features...".format(item_type)
-        
-        # Call OpenAI API to analyze the image description
-        analysis_result = self.analyze_item(item_type, ar, image_description)
-        
-        # Debugging: Inspect the API response
-        print("Analysis Result:", analysis_result)
-        
-        # Check if the expected keys exist in the response
-        if 'object_name' in analysis_result and 'object_rating' in analysis_result:
-            if analysis_result['object_name'] == 'yes' and analysis_result['object_rating'] == 'yes':
-                # Save the photo
-                house_photo = HousePhoto.objects.create(property_id=property_id, item_type=item_type)
-                saved_image = HouseItemImages.objects.create(
-                    item=house_photo,
-                    status='inspection',
-                    image=self.decode_image(image_base64)
-                )
-                
-                # Mark the condition as inspected
-                condition = Condition.objects.get(room_id=room_id, item=item_type)
-                Inspection.objects.create(
-                    room_id=room_id,
-                    condition=condition,
-                    score=100,  # Assign a score based on your logic
-                    is_completed=True,
-                    notes=f"Inspection of {item_type} is complete and matches the expected condition."
-                )
-                
-                # Check if all items in the room have been inspected
-                if self.all_items_inspected(room_id):
-                    inspection_status = "Inspection complete for room"
+
+        # Check if any image files are being uploaded
+        image_files = request.FILES.getlist('images')  # Multiple images can be uploaded
+
+        if not image_files:
+            return Response({"error": "No images provided"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Initialize analysis results
+        all_results = []
+
+        # Process each uploaded image
+        for image_file in image_files:
+            image_base64 = base64.b64encode(image_file.read()).decode('utf-8')
+            image_description = f"The image is of a {item_type} with the following notable features..."
+
+            # Call OpenAI API to analyze the image description
+            analysis_result = self.analyze_item(item_type, ar, image_description)
+            all_results.append(analysis_result)
+
+            # Check if the expected keys exist in the response
+            if 'object_name' in analysis_result and 'object_rating' in analysis_result:
+                if analysis_result['object_name'] == 'yes' and analysis_result['object_rating'] == 'yes':
+                    # Save the photo
+                    house_photo = HousePhoto.objects.create(property_id=property_id, item_type=item_type)
+                    saved_image = HouseItemImages.objects.create(
+                        item=house_photo,
+                        status='inspection',
+                        image=self.decode_image(image_base64)
+                    )
+                elif analysis_result['object_rating'] == 'repair':
+                    # Handle the case where the item needs repair
+                    repair = Repair.objects.create(
+                        user=tenant.user,
+                        property_id=property_id,
+                        repair_score=0.0,
+                        repair_history=f"Repair needed for {item_type}",
+                        status='pending',
+                        description=f"Inspection indicates that {item_type} needs repair.",
+                        completion_report="Pending",
+                        cost=0.0,
+                        reported_by=tenant.name
+                    )
+                    HouseItemImages.objects.create(
+                        item=house_photo,
+                        status='services',
+                        image=self.decode_image(image_base64)
+                    )
                 else:
-                    inspection_status = "Inspection successful, pending more items"
-
-                return Response({
-                    "status": inspection_status,
-                    "item_type": item_type,
-                    "condition": ar,
-                    "image_url": saved_image.image.url
-                }, status=status.HTTP_200_OK)
-            elif analysis_result['object_rating'] == 'Repair':
-                # Handle the case where the item needs repair
-                repair = Repair.objects.create(
-                    user=tenant.user,
-                    property_id=property_id,
-                    repair_score=0.0,  # You can modify this score based on your logic
-                    repair_history=f"Repair needed for {item_type}",
-                    status='pending',
-                    description=f"Inspection indicates that {item_type} needs repair.",
-                    completion_report="Pending",
-                    cost=0.0,  # Update this with the actual repair cost if available
-                    reported_by=tenant.name
-                )
-                
-                return Response({
-                    "status": "Repair needed",
-                    "item_type": item_type,
-                    "condition": ar,
-                    "repair_status": "Repair record created",
-                    "repair_id": repair.id  # Returning the repair ID might be useful for tracking
-                }, status=status.HTTP_200_OK)
+                    return Response({
+                        "status": "Inspection did not match expectations",
+                        "item_type": item_type,
+                        "condition": ar,
+                        "analysis_result": analysis_result
+                    }, status=status.HTTP_200_OK)
             else:
-                # Handle the case where the object does not match or the rating is not 'yes'
-                return Response({
-                    "status": "Inspection did not match expectations",
-                    "item_type": item_type,
-                    "condition": ar,
-                    "analysis_result": analysis_result  # Include the analysis result for debugging
-                }, status=status.HTTP_200_OK)
-        else:
-            # Handle the case where the expected keys are missing
-            return Response({"error": "Unexpected response from analysis", "debug": analysis_result}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({"error": "Unexpected response from analysis", "debug": analysis_result}, status=status.HTTP_400_BAD_REQUEST)
 
-      # Define the OpenAI API key and headers
+        # If all items are inspected and good or fair, update the condition and inspection
+        condition = Condition.objects.get(room_id=room_id, item=item_type)
+        condition.iscomplete = True
+        condition.save()
+
+        Inspection.objects.create(
+            room_id=room_id,
+            condition=condition,
+            score=100,
+            is_completed=True,
+            notes=f"Inspection of {item_type} is complete and matches the expected condition."
+        )
+
+        # Check if all items in the room have been inspected
+        if self.all_items_inspected(room_id):
+            inspection_status = "Inspection complete for room"
+        else:
+            inspection_status = "Inspection successful, pending more items"
+
+        return Response({
+            "status": inspection_status,
+            "item_type": item_type,
+            "condition": ar,
+            "image_urls": [image.image.url for image in saved_image]
+        }, status=status.HTTP_200_OK)
+
     def analyze_item(self, itemname, ar, description):
         # Define the OpenAI API key and headers
-        api_key ="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"
+        api_key = "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"
         headers = {
             "Content-Type": "application/json",
             "Authorization": f"Bearer {api_key}"
         }
 
-        # Construct the prompt with the description
         prompt = f"""
         You are an assistant tasked with analyzing a description of a '{itemname}' to determine its condition.
         The description is as follows: '{description}'.
         The possible conditions are only 'Good', 'Fair', or 'Repair'.
-        
+
         Based on this description, please perform the following tasks:
         1. Identify whether the object is the same or similar to '{itemname}'. Return 'yes' or 'no'.
         2. Rate the '{itemname}' in one of the following categories:
@@ -207,7 +203,7 @@ class TenantInspectionView(APIView):
         """
 
         payload = {
-            "model": "gpt-4o",
+            "model": "gpt-4o-mini",
             "messages": [
                 {
                     "role": "user",
@@ -229,7 +225,7 @@ class TenantInspectionView(APIView):
         image_data = base64.b64decode(image_base64)
         file_name = f'{uuid.uuid4()}.jpeg'
         return ContentFile(image_data, name=file_name)
-    
+
     def all_items_inspected(self, room_id):
         conditions = Condition.objects.filter(room_id=room_id)
         for condition in conditions:

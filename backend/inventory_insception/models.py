@@ -29,8 +29,10 @@ class Room(models.Model):
 class Condition(models.Model):
     room = models.ForeignKey(Room, related_name='conditions', on_delete=models.CASCADE)
     item = models.CharField(max_length=100)
+    iscomplete = models.BooleanField( default= False )
+    description = models.CharField(max_length=256 , default="sample text")
     def __str__(self):
-        return f'{self.item} - {self.room} - {self.condition}'
+        return f'{self.item} - {self.room}'
 class Inspection(models.Model):
     room = models.ForeignKey(Room, related_name='inspections', on_delete=models.CASCADE)
     condition = models.ForeignKey(Condition, related_name='inspections', on_delete=models.CASCADE, null=True, blank=True)

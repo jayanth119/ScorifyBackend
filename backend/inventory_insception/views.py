@@ -144,7 +144,9 @@ class TenantRoomDetailView(APIView):
         for condition in conditions:
             condition_list.append({
                 "condition_id": condition.id,
-                "condition": condition.item  # Assuming you meant to refer to the 'item' field here
+                "condition": condition.item ,
+                 "iscomplete": condition.iscomplete  ,
+                  "description" : condition.description  # Assuming you meant to refer to the 'item' field here
             })
 
         return Response({
